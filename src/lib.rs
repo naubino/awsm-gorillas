@@ -11,14 +11,15 @@ extern crate nalgebra as na;
 extern crate ncollide2d;
 extern crate nphysics2d;
 
-use na::{Isometry2, Vector2};
-use ncollide2d::shape::{Cuboid, ShapeHandle};
+use na::{Vector2};
+use ncollide2d::shape::{Cuboid};
 use ncollide2d::world::CollisionObjectHandle;
 use nphysics2d::object::{BodyHandle, Material};
 use nphysics2d::volumetric::Volumetric;
 
 type World = nphysics2d::world::World<f64>;
-type Isometry2 = Isometry2<f64>;
+type Isometry2 = na::Isometry2<f64>;
+type ShapeHandle = ncollide2d::shape::ShapeHandle<f64>;
 
 //
 
@@ -103,8 +104,8 @@ struct SimpleBox {
 impl SimpleBox {
     pub fn new(world: &mut World, transform: Isometry2, radx: f64, rady: f64) -> SimpleBox {
         let shape = make_box_shape(radx, rady);
-        let body = make_simple_body(world, transform, shape);
-        let collisionObject = make_simple_collider(world, shape, body);
+        let body = make_simple_body(world, transform, shape.clone());
+        let collisionObject = make_simple_collider(world, shape.clone(), body);
         SimpleBox { shape, body, collisionObject }
     }
 }
