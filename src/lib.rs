@@ -13,10 +13,12 @@ extern crate nphysics2d;
 
 use na::{Isometry2, Vector2};
 use ncollide2d::shape::{Cuboid, ShapeHandle};
+use ncollide2d::world::CollisionObjectHandle;
 use nphysics2d::object::{BodyHandle, Material};
 use nphysics2d::volumetric::Volumetric;
 
 type World = nphysics2d::world::World<f64>;
+type Isometry2 = Isometry2<f64>;
 
 //
 
@@ -25,6 +27,7 @@ pub struct Game {
     canvas: HtmlCanvasElement,
     world: World,
 }
+
 
 #[wasm_bindgen]
 impl Game {
@@ -74,35 +77,60 @@ fn render_nphysics_world(world: &World, ctx: CanvasRenderingContext2d) {
     });
 }
 
-// example nphysics scenes
+fn make_ground(world: &mut World) -> CollisionObjectHandle {
+    let margin = 0.01;
+    let radius_x = 25.0 - margin;
+    let radius_y = 1.0 - margin;
+    let radius = Vector2::new(radius_x, radius_y);
+    let cuboid = Cuboid::new(radius);
+    let shape = ShapeHandle::new(cuboid);
+    let pos = Isometry2::new(-Vector2::y() * radius_y, na::zero());
+    world.add_collider(
+        margin,
+        shape,
+        BodyHandle::ground(),
+        pos,
+        Material::default(),
+    )
+}
 
-const COLLIDER_MARGIN: f64 = 0.01;
+struct SimpleBox {
+    shape: ShapeHandle,
+    body: BodyHandle,
+    collisionObject: CollisionObjectHandle,
+}
+
+impl SimpleBox {
+    pub fn new(world: &mut World, transform: Isometry2, radx: f64, rady: f64) -> SimpleBox {
+        let shape = make_box_shape(radx, rady);
+        let body = make_simple_body(world, transform, shape);
+        let collisionObject = make_simple_collider(world, shape, body);
+        SimpleBox { shape, body, collisionObject }
+    }
+}
+
+fn make_box_shape(radx: f64, rady: f64) -> ShapeHandle {
+    ShapeHandle::new(Cuboid::new(Vector2::new(radx, rady)))
+}
+
+fn make_simple_body(world: &mut World, transform: Isometry2, shape: ShapeHandle) -> BodyHandle {
+    world.add_rigid_body(transform, shape.inertia(1.0), shape.center_of_mass())
+}
+
+fn make_simple_collider(world: &mut World, shape: ShapeHandle, body: BodyHandle) -> CollisionObjectHandle {
+    let margin = 0.01;
+    let transform = Isometry2::identity();
+    let material = Material::default();
+    world.add_collider(margin, shape, body, transform, material)
+}
+
+// example nphysics scenes
 
 fn setup_nphysics_boxes_scene(world: &mut World) {
     world.set_gravity(Vector2::new(0.0, -9.81));
+    
+    let ground = make_ground(world);
 
-    /*
-     * Ground
-     */
-    let ground_radx = 25.0;
-    let ground_rady = 1.0;
-    let ground_shape = ShapeHandle::new(Cuboid::new(Vector2::new(
-        ground_radx - COLLIDER_MARGIN,
-        ground_rady - COLLIDER_MARGIN,
-    )));
-
-    let ground_pos = Isometry2::new(-Vector2::y() * ground_rady, na::zero());
-    world.add_collider(
-        COLLIDER_MARGIN,
-        ground_shape,
-        BodyHandle::ground(),
-        ground_pos,
-        Material::default(),
-    );
-
-    /*
-     * Create the boxes
-     */
     let num = 25;
     let radx = 0.1;
     let rady = 0.1;
@@ -111,34 +139,12 @@ fn setup_nphysics_boxes_scene(world: &mut World) {
     let centerx = shiftx * num as f64 / 2.0;
     let centery = shifty / 2.0;
 
-    let geom = ShapeHandle::new(Cuboid::new(Vector2::new(
-        radx - COLLIDER_MARGIN,
-        rady - COLLIDER_MARGIN,
-    )));
-    let inertia = geom.inertia(1.0);
-    let center_of_mass = geom.center_of_mass();
-
     for i in 0usize..num {
         for j in 0..num {
             let x = i as f64 * shiftx - centerx;
             let y = j as f64 * shifty + centery;
-
-            /*
-             * Create the rigid body.
-             */
             let pos = Isometry2::new(Vector2::new(x, y), 0.0);
-            let handle = world.add_rigid_body(pos, inertia, center_of_mass);
-
-            /*
-             * Create the collider.
-             */
-            world.add_collider(
-                COLLIDER_MARGIN,
-                geom.clone(),
-                handle,
-                Isometry2::identity(),
-                Material::default(),
-            );
+            SimpleBox::new(world, pos, radx, rady);
         }
     }
 }
