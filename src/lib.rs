@@ -3,7 +3,7 @@ use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 
 use web_sys::{CanvasRenderingContext2d, HtmlCanvasElement};
-use web_sys::{Document, EventTarget, KeyboardEvent};
+use web_sys::{EventTarget, KeyboardEvent};
 
 use serde_derive::{Serialize, Deserialize};
 
@@ -12,6 +12,9 @@ use ncollide2d::shape::{Cuboid};
 use ncollide2d::world::CollisionObjectHandle;
 use nphysics2d::object::{BodyHandle, Material};
 use nphysics2d::volumetric::Volumetric;
+
+mod dom_helpers;
+mod shapes;
 
 type World = nphysics2d::world::World<f64>;
 type Isometry2 = nalgebra::Isometry2<f64>;
@@ -84,7 +87,7 @@ impl Game {
     pub fn render_scene(&self, view_conf: &JsValue) {
         let view_config: ViewConfig = view_conf.into_serde().unwrap();
 
-        let ctx = canvas_get_ctx_2d(&self.canvas);
+        let ctx = dom_helpers::canvas_get_ctx_2d(&self.canvas);
         ctx.clear_rect(0.0, 0.0, self.canvas.width().into(), self.canvas.height().into());
         ctx.save();
         ctx.translate(view_config.x.unwrap_or(0.0), view_config.y.unwrap_or(0.0)).unwrap();
@@ -108,9 +111,9 @@ struct SimpleBox {
 
 impl SimpleBox {
     pub fn new(world: &mut World, transform: Isometry2, radx: f64, rady: f64, margin: f64) -> SimpleBox {
-        let shape = make_box_shape(radx, rady);
-        let body = make_simple_body(world, transform, shape.clone());
-        let collisionObject = make_simple_collider(world, shape.clone(), body, margin);
+        let shape = ShapeHandle::new(Cuboid::new(Vector2::new(radx, rady)));
+        let body = world.add_rigid_body(transform, shape.inertia(0.1), shape.center_of_mass());
+        let collisionObject = world.add_collider(margin, shape.clone(), body, Isometry2::identity(), Material::default());
         SimpleBox { shape, body, collisionObject }
     }
 
@@ -118,73 +121,6 @@ impl SimpleBox {
         let pos = Isometry2::new(vector, 0.0);
         SimpleBox::new(world, pos, radx, rady, margin)
     }
-}
-
-#[wasm_bindgen]
-pub fn listen_for_keys() -> Result<(), JsValue> {
-    let document = get_document();
-
-    let cb = Closure::wrap(Box::new(move |v: KeyboardEvent| {
-        debug!("down wityh all the keys: {:#?}", v.key())
-    }) as Box<dyn Fn(_)>);
-
-    let et: &EventTarget = document.as_ref();
-    et.add_event_listener_with_callback("keydown", cb.as_ref().unchecked_ref())?;
-    cb.forget();
-
-    Ok(())
-}
-
-fn get_document() -> Document {
-    let window = web_sys::window().expect("no global `window` exists");
-    let document = window.document().expect("should have a document on window");
-
-    document
-}
-
-fn canvas_get_ctx_2d(canvas: &HtmlCanvasElement) -> CanvasRenderingContext2d {
-    canvas
-        .get_context("2d")
-        .unwrap()
-        .unwrap()
-        .dyn_into::<CanvasRenderingContext2d>()
-        .unwrap()
-}
-
-fn make_ground(world: &mut World, cfg: &SceneConfig) -> CollisionObjectHandle {
-    let margin = cfg.margin.unwrap_or(0.);
-    let radius_x = cfg.ground_radx.unwrap_or(1.);
-    let radius_y = cfg.ground_rady.unwrap_or(1.);
-    let radius = Vector2::new(radius_x, radius_y);
-    let cuboid = Cuboid::new(radius);
-    let shape = ShapeHandle::new(cuboid);
-    let x = cfg.ground_x.unwrap_or(0.);
-    let y = cfg.ground_y.unwrap_or(0.);
-    let pos = Isometry2::new(Vector2::new(x, y), zero());
-    debug!("make_ground {:?}", (margin, radius_x, radius_y, radius, pos));
-
-    world.add_collider(
-        margin,
-        shape,
-        BodyHandle::ground(),
-        pos,
-        Material::default(),
-    )
-}
-
-
-fn make_box_shape(radx: f64, rady: f64) -> ShapeHandle {
-    ShapeHandle::new(Cuboid::new(Vector2::new(radx, rady)))
-}
-
-fn make_simple_body(world: &mut World, transform: Isometry2, shape: ShapeHandle) -> BodyHandle {
-    world.add_rigid_body(transform, shape.inertia(0.1), shape.center_of_mass())
-}
-
-fn make_simple_collider(world: &mut World, shape: ShapeHandle, body: BodyHandle, margin: f64) -> CollisionObjectHandle {
-    let transform = Isometry2::identity();
-    let material = Material::default();
-    world.add_collider(margin, shape, body, transform, material)
 }
 
 // example nphysics scenes
@@ -224,7 +160,7 @@ fn make_building(world: &mut World, x_pos: f64, width: usize, height: usize, cfg
 fn setup_nphysics_boxes_scene(world: &mut World, cfg: &SceneConfig) {
     world.set_gravity(Vector2::new(0.0, 0.981));
 
-    make_ground(world, cfg);
+    shapes::make_ground(world, cfg);
     make_building(world, 1., 3, 5, cfg);
     // make_building(world, 2., 3, 5);
     // make_building(world, 3., 4, 6);

@@ -1,24 +1,25 @@
 import { initGamePad, gamepadNormalize, controllers } from './gamepad';
 
-const DEBUG_GAME_PAD = true;
+const DEBUG_GAME_PAD = !true;
 
 window.viewConfig = {x: 0, y: -500, rotation: 0, zoom: 1};
 
 void async function main() {
-    const js = await import("./pkg");
-    js.listen_for_keys();
+    const wasm = await import("./pkg");
 
     initGamePad(DEBUG_GAME_PAD);
 
     const canvas = document.createElement('canvas');
     canvas.style.border = "1px solid black";
-    const width = 800;
-    const height = 800;
+    const [width, height] = [800, 800];
     canvas.width = width;
     canvas.height = height;
+
     document.body.appendChild(canvas);
-    const game = new js.Game(canvas, { width, height });
+
+    const game = new wasm.Game(canvas, { width, height });
     window.game = game;
+
     game.setup_boxes_scene({
         margin: 0.0,
         box_radx: 0.1,
