@@ -21,7 +21,7 @@ void async function main() {
         }
 
         game.step();
-        game.render_scene();
+        game.render_scene(window.viewConfig || {});
         requestAnimationFrame(loop);
     }
     loop();

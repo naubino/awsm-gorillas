@@ -4,7 +4,7 @@ use wasm_bindgen::JsCast;
 use web_sys::{CanvasRenderingContext2d, HtmlCanvasElement};
 use web_sys::{Document, EventTarget, KeyboardEvent, console};
 
-use  serde_derive::{Serialize, Deserialize};
+use serde_derive::{Serialize, Deserialize};
 
 use nalgebra::{Vector2, zero};
 use ncollide2d::shape::{Cuboid};
@@ -33,10 +33,17 @@ pub struct GameConfig {
     height: Option<f64>,
 }
 
+#[derive(Default, Debug, Serialize, Deserialize)]
+pub struct ViewConfig {
+    rot: Option<f64>,
+    x: Option<f64>,
+    y: Option<f64>,
+    zoom: Option<f64>,
+}
+
 #[wasm_bindgen]
 pub struct Game {
     canvas: HtmlCanvasElement,
-    x_offset: f64,
     world: World,
 }
 
@@ -48,7 +55,6 @@ impl Game {
         debug!("game config: {:?}", conf);
         Game {
             canvas: canvas,
-            x_offset: 0.0,
             world: World::new(),
         }
     }
@@ -57,15 +63,13 @@ impl Game {
         setup_nphysics_boxes_scene(&mut self.world);
     }
 
-    pub fn pan(&mut self, x: f64) {
-        self.x_offset = self.x_offset + x;
-    }
+    pub fn render_scene(&self, view_conf: &JsValue) {
+        let view_config: ViewConfig = view_conf.into_serde().unwrap();
 
-    pub fn render_scene(&self) {
         let context = canvas_get_context_2d(&self.canvas);
         context.clear_rect(0., 0., self.canvas.width().into(), self.canvas.height().into());
         context.save();
-        context.translate(self.x_offset, 0.0);
+        context.translate(view_config.x.unwrap_or(0.0), view_config.y.unwrap_or(0.0));
         render_nphysics_world(&self.world, &context);
         context.restore();
     }
@@ -73,6 +77,7 @@ impl Game {
     pub fn step(&mut self) {
         self.world.step();
     }
+
 }
 
 struct SimpleBox {
