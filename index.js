@@ -22,11 +22,13 @@ void async function main() {
     const loop = () => {
         const gamePad = controllers[0];
         if (gamePad) {
-            const [ hori1, vert1, l2, hori2, vert2, r2, hori3, vert3 ] = gamePad.axes;
+            const input = gamepad_normalize(gamePad);
+            console.log(input);
+            const { hori1, vert1, l2, hori2, vert2, r2, hori3, vert3 } = input;
             window.viewConfig.x += hori1 * 8;
             window.viewConfig.y += vert1 * 8;
             window.viewConfig.rotation = Math.atan2(vert2, hori2);
-            window.viewConfig.zoom += r2;
+            window.viewConfig.zoom += 0.01 * (-l2 + r2);
         }
 
         game.step();
@@ -35,6 +37,37 @@ void async function main() {
     }
     loop();
 }()
+
+function gamepad_normalize(gamePad) {
+    let hori1, vert1, l2, hori2, vert2, r2, hori3, vert3;
+    // gilberts linux laptop
+    if (gamePad.axes.length === 8) {
+        [ hori1, vert1, l2, hori2, vert2, r2, hori3, vert3 ] = gamePad.axes;
+    }
+    // hendriks mac book
+    else if (gamePad.axes.length === 4) {
+        const { axes, buttons } = gamePad;
+        [ hori1, vert1, hori2, vert2 ] = axes;
+        const btn = (i) => gamepad_btn(buttons[i]);
+        l2 = btn(6);
+        r2 = btn(7);
+        hori3 = -btn(14) + btn(15);
+        vert3 = -btn(12) + btn(13);
+    }
+    // don't know yet
+    else console.error("I don't know this game pad mapping.");
+    return { hori1, vert1, l2, hori2, vert2, r2, hori3, vert3 };
+}
+
+// I hope only 'val' is needed, not 'pressed'
+function gamepad_btn(val) {
+    // var pressed = val == 1.0;
+    if (typeof (val) == "object") {
+        // pressed = val.pressed;
+        val = val.value;
+    }
+    return val;
+}
 
 function input_update() {
     const [ hori1, vert1, l2, hori2, vert2, r2, hori3, vert3 ] = gamePads.axes;
