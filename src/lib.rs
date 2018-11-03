@@ -142,19 +142,19 @@ fn make_building(world: &mut World, x_pos: f64, width: usize, height: usize, cfg
     let ground_pos = Vector2::new(ground_x, ground_y - ground_rady);
     //let ground_pos = Isometry2::new(ground, zero()).translation.vector;
 
-    // for yi in 0usize..height {
-    //     // for xi in 0..width {
-    //     // let xi = 1;
-    //     //     let x = xi as f64 * shiftx - ground_pos.x + x_pos;
-    //     //     let y = ground_pos.y - yi as f64 * shifty;
-    //     //     let pos = Isometry2::new(Vector2::new(x, y), 0.0);
-    //         SimpleBox::new(world, pos, radx, rady);
-    //     // }
-    // }
+    let w = radx + margin;
+    let h = rady + margin;
 
-    SimpleBox::from_vector(world, Vector2::new(1., ground_pos.y - f1 * rady), radx, rady, margin);
-    SimpleBox::from_vector(world, Vector2::new(1., ground_pos.y - f2 * rady), radx, rady, margin);
-    SimpleBox::from_vector(world, Vector2::new(4., ground_pos.y - f1 * rady), radx, rady, margin);
+    for yi in 0..height {
+        for xi in 0..width {
+            let x = xi as f64;
+            let y = yi as f64;
+
+            let vec = Vector2::new(x_pos + x * 2.0 * w, ground_y - ground_rady - h * (1. + margin + 2. * (y + margin)));
+
+            SimpleBox::from_vector(world, vec, radx, rady, margin);
+        }
+    }
 }
 
 fn setup_nphysics_boxes_scene(world: &mut World, cfg: &SceneConfig) {
@@ -162,9 +162,9 @@ fn setup_nphysics_boxes_scene(world: &mut World, cfg: &SceneConfig) {
 
     shapes::make_ground(world, cfg);
     make_building(world, 1., 3, 5, cfg);
-    // make_building(world, 2., 3, 5);
-    // make_building(world, 3., 4, 6);
-    // make_building(world, 4., 3, 7);
+    make_building(world, 2., 3, 5, cfg);
+    make_building(world, 3., 4, 6, cfg);
+    make_building(world, 4., 3, 7, cfg);
 
 
 }
