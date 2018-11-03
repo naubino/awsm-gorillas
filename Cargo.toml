@@ -1,7 +1,8 @@
 [package]
 name = "minimal"
 version = "0.1.0"
-authors = ["Hendrik Sollich <hendrik@hoodie.de>"]
+authors = [ "Hendrik Sollich <hendrik@hoodie.de>", "Gilbert Röhrbein <gilbert@ifsr.de>" ]
+edition = "2018"
 
 [dependencies]
 nalgebra = "0.16"

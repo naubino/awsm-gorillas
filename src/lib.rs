@@ -1,30 +1,19 @@
-extern crate wasm_bindgen;
-
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
-
-extern crate web_sys;
 
 use web_sys::{CanvasRenderingContext2d, HtmlCanvasElement};
 use web_sys::{Document, EventTarget, KeyboardEvent, console};
 
-extern crate nalgebra as na;
-extern crate ncollide2d;
-extern crate nphysics2d;
+use  serde_derive::{Serialize, Deserialize};
 
-extern crate serde;
-#[macro_use]
-extern crate serde_derive;
-extern crate serde_json;
-
-use na::{Vector2};
+use nalgebra::{Vector2, zero};
 use ncollide2d::shape::{Cuboid};
 use ncollide2d::world::CollisionObjectHandle;
 use nphysics2d::object::{BodyHandle, Material};
 use nphysics2d::volumetric::Volumetric;
 
 type World = nphysics2d::world::World<f64>;
-type Isometry2 = na::Isometry2<f64>;
+type Isometry2 = nalgebra::Isometry2<f64>;
 type ShapeHandle = ncollide2d::shape::ShapeHandle<f64>;
 
 #[wasm_bindgen]
@@ -106,7 +95,7 @@ pub fn listen_for_keys() -> Result<(), JsValue> {
 
     let cb = Closure::wrap(Box::new(move |v: KeyboardEvent| {
         debug(&format!("down wityh all the keys: {:#?}", v.key()))
-    }) as Box<Fn(_)>);
+    }) as Box<dyn Fn(_)>);
 
     let et: &EventTarget = document.as_ref();
     et.add_event_listener_with_callback("keydown", cb.as_ref().unchecked_ref())?;
@@ -138,7 +127,7 @@ fn make_ground(world: &mut World) -> CollisionObjectHandle {
     let radius = Vector2::new(radius_x, radius_y);
     let cuboid = Cuboid::new(radius);
     let shape = ShapeHandle::new(cuboid);
-    let pos = Isometry2::new(Vector2::new(0., 9. ), na::zero());
+    let pos = Isometry2::new(Vector2::new(0., 9. ), zero());
     debug(&format!("make_ground {:?}", (margin, radius_x, radius_y, radius, pos)));
     world.add_collider(
         margin,
@@ -170,7 +159,7 @@ fn make_simple_collider(world: &mut World, shape: ShapeHandle, body: BodyHandle)
 fn setup_nphysics_boxes_scene(world: &mut World) {
     world.set_gravity(Vector2::new(0.0, 9.81));
 
-    let ground = make_ground(world);
+    let _ground = make_ground(world);
 
     let num = 25;
     let radx = 0.1;
