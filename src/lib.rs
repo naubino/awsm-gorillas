@@ -18,13 +18,14 @@ type ShapeHandle = ncollide2d::shape::ShapeHandle<f64>;
 
 #[wasm_bindgen]
 extern {
-    #[wasm_bindgen(js_namespace = console)]
-    pub fn log(msg: &str);
-
-    #[wasm_bindgen(js_namespace = console)]
-    pub fn debug(msg: &str);
+    #[wasm_bindgen(js_namespace = console)] pub fn warn(msg: &str);
+    #[wasm_bindgen(js_namespace = console)] pub fn debug(msg: &str);
+    #[wasm_bindgen(js_namespace = console)] pub fn error(msg: &str);
 }
 
+macro_rules! debug { ($($arg:tt)*) => ( debug(&format!($($arg)*));) }
+macro_rules! warn { ($($arg:tt)*) => ( warn(&format!($($arg)*));) }
+macro_rules! error { ($($arg:tt)*) => ( error(&format!($($arg)*));) }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct GameConfig {
@@ -44,7 +45,7 @@ impl Game {
     #[wasm_bindgen(constructor)]
     pub fn new(canvas: HtmlCanvasElement, config: &JsValue) -> Game {
         let conf: GameConfig = config.into_serde().unwrap();
-        debug(&format!("game config: {:?}", conf));
+        debug!("game config: {:?}", conf);
         Game {
             canvas: canvas,
             x_offset: 0.0,
@@ -94,7 +95,7 @@ pub fn listen_for_keys() -> Result<(), JsValue> {
     let document = get_document();
 
     let cb = Closure::wrap(Box::new(move |v: KeyboardEvent| {
-        debug(&format!("down wityh all the keys: {:#?}", v.key()))
+        debug!("down wityh all the keys: {:#?}", v.key())
     }) as Box<dyn Fn(_)>);
 
     let et: &EventTarget = document.as_ref();
@@ -128,7 +129,7 @@ fn make_ground(world: &mut World) -> CollisionObjectHandle {
     let cuboid = Cuboid::new(radius);
     let shape = ShapeHandle::new(cuboid);
     let pos = Isometry2::new(Vector2::new(0., 9. ), zero());
-    debug(&format!("make_ground {:?}", (margin, radius_x, radius_y, radius, pos)));
+    debug!("make_ground {:?}", (margin, radius_x, radius_y, radius, pos));
     world.add_collider(
         margin,
         shape,
@@ -207,10 +208,10 @@ fn render_nphysics_world(world: &World, ctx: &CanvasRenderingContext2d) {
                 ctx.restore();
                 // console::log_2(&pos.x.into(), &pos.y.into());
             } else {
-                debug(&format!("not painting" ));
+                debug!("not painting" );
             }
         }
     });
-    // debug(&format!("painted colliders" ));
+    // debug!("painted colliders" );
 }
 
