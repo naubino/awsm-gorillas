@@ -35,7 +35,7 @@ pub struct GameConfig {
 
 #[derive(Default, Debug, Serialize, Deserialize)]
 pub struct ViewConfig {
-    rot: Option<f64>,
+    rotation: Option<f64>,
     x: Option<f64>,
     y: Option<f64>,
     zoom: Option<f64>,
@@ -66,12 +66,14 @@ impl Game {
     pub fn render_scene(&self, view_conf: &JsValue) {
         let view_config: ViewConfig = view_conf.into_serde().unwrap();
 
-        let context = canvas_get_context_2d(&self.canvas);
-        context.clear_rect(0., 0., self.canvas.width().into(), self.canvas.height().into());
-        context.save();
-        context.translate(view_config.x.unwrap_or(0.0), view_config.y.unwrap_or(0.0));
-        render_nphysics_world(&self.world, &context);
-        context.restore();
+        let ctx = canvas_get_ctx_2d(&self.canvas);
+        ctx.clear_rect(0.0, 0.0, self.canvas.width().into(), self.canvas.height().into());
+        ctx.save();
+        ctx.translate(view_config.x.unwrap_or(0.0), view_config.y.unwrap_or(0.0));
+        ctx.rotate(view_config.rotation.unwrap_or(0.0));
+        ctx.scale(view_config.zoom.unwrap_or(1.0), view_config.zoom.unwrap_or(1.0));
+        render_nphysics_world(&self.world, &ctx);
+        ctx.restore();
     }
 
     pub fn step(&mut self) {
@@ -117,7 +119,7 @@ fn get_document() -> Document {
     document
 }
 
-fn canvas_get_context_2d(canvas: &HtmlCanvasElement) -> CanvasRenderingContext2d {
+fn canvas_get_ctx_2d(canvas: &HtmlCanvasElement) -> CanvasRenderingContext2d {
     canvas
         .get_context("2d")
         .unwrap()

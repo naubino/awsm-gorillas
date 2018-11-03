@@ -1,3 +1,9 @@
+const DEBUG_GAME_PAD = true;
+const haveEvents = 'ongamepadconnected' in window;
+const controllers = {};
+
+window.viewConfig = {x: 0, y: 0, rotation: 1, zoom: 1};
+
 void async function main() {
     const js = await import("./pkg");
     js.listen_for_keys();
@@ -12,16 +18,19 @@ void async function main() {
     const game = new js.Game(canvas, { width, height });
     window.game = game;
     game.setup_boxes_scene();
-    
+
     const loop = () => {
-        const gamePad = gamePads[0];
+        const gamePad = controllers[0];
         if (gamePad) {
             const [ hori1, vert1, l2, hori2, vert2, r2, hori3, vert3 ] = gamePad.axes;
-            game.pan(hori1 * 5);
+            window.viewConfig.x += hori1 * 8;
+            window.viewConfig.y += vert1 * 8;
+            window.viewConfig.rotation = Math.atan2(vert2, hori2);
+            window.viewConfig.zoom += r2;
         }
 
         game.step();
-        game.render_scene(window.viewConfig || {});
+        game.render_scene(viewConfig);
         requestAnimationFrame(loop);
     }
     loop();
@@ -33,7 +42,7 @@ function input_update() {
 }
 
 
-function debugAddGamePad() {
+function debugAddGamePad(gamepad) {
     var d = document.createElement("div");
     d.setAttribute("id", "controller" + gamepad.index);
 
@@ -121,17 +130,26 @@ function debugUpdateGamePad() {
     requestAnimationFrame(debugUpdateGamePad);
 }
 
-function debugRemoveGamePad() {
+function debugRemoveGamePad(gamepad) {
     var d = document.getElementById("controller" + gamepad.index);
     document.body.removeChild(d);
 }
 
-let gamePads;
-void function gamePad() {
 
-    let haveEvents = 'ongamepadconnected' in window;
-    let controllers = {};
-    gamePads = controllers;
+function scangamepads() {
+    var gamepads = navigator.getGamepads ? navigator.getGamepads() : (navigator.webkitGetGamepads ? navigator.webkitGetGamepads() : []);
+    for (var i = 0; i < gamepads.length; i++) {
+        if (gamepads[i]) {
+            if (gamepads[i].index in controllers) {
+                controllers[gamepads[i].index] = gamepads[i];
+            } else {
+                addgamepad(gamepads[i]);
+            }
+        }
+    }
+}
+
+void function gamePad() {
 
     function connecthandler(e) {
         addgamepad(e.gamepad);
@@ -139,7 +157,7 @@ void function gamePad() {
 
     function addgamepad(gamepad) {
         controllers[gamepad.index] = gamepad;
-        if (DEBUG_GAME_PAD) debugAddGamePad();
+        if (DEBUG_GAME_PAD) debugAddGamePad(gamepad);
     }
 
     function disconnecthandler(e) {
@@ -147,21 +165,8 @@ void function gamePad() {
     }
 
     function removegamepad(gamepad) {
-        if (DEBUG_GAME_PAD) debugRemoveGamePad();
+        if (DEBUG_GAME_PAD) debugRemoveGamePad(gamepad);
         delete controllers[gamepad.index];
-    }
-
-    function scangamepads() {
-        var gamepads = navigator.getGamepads ? navigator.getGamepads() : (navigator.webkitGetGamepads ? navigator.webkitGetGamepads() : []);
-        for (var i = 0; i < gamepads.length; i++) {
-            if (gamepads[i]) {
-                if (gamepads[i].index in controllers) {
-                    controllers[gamepads[i].index] = gamepads[i];
-                } else {
-                    addgamepad(gamepads[i]);
-                }
-            }
-        }
     }
 
     window.addEventListener("gamepadconnected", connecthandler);
