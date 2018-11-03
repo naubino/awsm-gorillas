@@ -20,16 +20,17 @@ void async function main() {
     const game = new wasm.Game(canvas, { width, height });
     window.game = game;
 
+    const margin = 0.0000001;
     game.setup_boxes_scene({
-        margin: 0.0,
-        box_radx: 0.1,
-        box_rady: 0.1,
-        ground_radx: 125,
-        ground_rady: 1,
+        margin,
+        box_radx: 0.1 - margin,
+        box_rady: 0.1 - margin,
+        ground_radx: 125 - margin,
+        ground_rady: 1 - margin,
         ground_x: 0,
         ground_y: 9,
         f1: 1,
-        f2: 3.01,
+        f2: 2,
     });
 
     const loop = () => {
