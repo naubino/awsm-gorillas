@@ -10,6 +10,7 @@ void async function main() {
     canvas.height = height;
     document.body.appendChild(canvas);
     const game = new js.Game(canvas, {width, height});
+    window.game = game;
     game.setup_boxes_scene();
     const loop = () => {
         game.step();

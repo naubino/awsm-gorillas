@@ -6,7 +6,7 @@ use wasm_bindgen::JsCast;
 extern crate web_sys;
 
 use web_sys::{CanvasRenderingContext2d, HtmlCanvasElement};
-use web_sys::{Document, EventTarget, KeyboardEvent};
+use web_sys::{Document, EventTarget, KeyboardEvent, console};
 
 extern crate nalgebra as na;
 extern crate ncollide2d;
@@ -46,6 +46,7 @@ pub struct GameConfig {
 #[wasm_bindgen]
 pub struct Game {
     canvas: HtmlCanvasElement,
+    x_offset: f64,
     world: World,
 }
 
@@ -57,6 +58,7 @@ impl Game {
         debug(&format!("game config: {:?}", conf));
         Game {
             canvas: canvas,
+            x_offset: 0.0,
             world: World::new(),
         }
     }
@@ -65,10 +67,17 @@ impl Game {
         setup_nphysics_boxes_scene(&mut self.world);
     }
 
+    pub fn pan(&mut self, x: f64) {
+        self.x_offset = self.x_offset + x;
+    }
+
     pub fn render_scene(&self) {
         let context = canvas_get_context_2d(&self.canvas);
         context.clear_rect(0., 0., self.canvas.width().into(), self.canvas.height().into());
-        render_nphysics_world(&self.world, context);
+        context.save();
+        context.translate(self.x_offset, 0.0);
+        render_nphysics_world(&self.world, &context);
+        context.restore();
     }
 
     pub fn step(&mut self) {
@@ -181,7 +190,7 @@ fn setup_nphysics_boxes_scene(world: &mut World) {
     }
 }
 
-fn render_nphysics_world(world: &World, ctx: CanvasRenderingContext2d) {
+fn render_nphysics_world(world: &World, ctx: &CanvasRenderingContext2d) {
     world.colliders().for_each(|collider| {
 
         if let Some(body) = world.rigid_body(collider.data().body()) {
