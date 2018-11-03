@@ -42,6 +42,21 @@ pub struct ViewConfig {
     zoom: Option<f64>,
 }
 
+type Num = Option<f64>;
+
+#[derive(Default, Debug, Serialize, Deserialize)]
+pub struct SceneConfig {
+    margin: Num,
+    box_radx: Num,
+    box_rady: Num,
+    ground_radx: Num,
+    ground_rady: Num,
+    ground_x: Num,
+    ground_y: Num,
+    f1: Num,
+    f2: Num,
+}
+
 #[wasm_bindgen]
 pub struct Game {
     canvas: HtmlCanvasElement,
@@ -60,8 +75,10 @@ impl Game {
         }
     }
 
-    pub fn setup_boxes_scene(&mut self) {
-        setup_nphysics_boxes_scene(&mut self.world);
+    pub fn setup_boxes_scene(&mut self, scene_conf: &JsValue) {
+        let scene_config: SceneConfig = scene_conf.into_serde().unwrap();
+
+        setup_nphysics_boxes_scene(&mut self.world, &scene_config);
     }
 
     pub fn render_scene(&self, view_conf: &JsValue) {
@@ -90,16 +107,16 @@ struct SimpleBox {
 }
 
 impl SimpleBox {
-    pub fn new(world: &mut World, transform: Isometry2, radx: f64, rady: f64) -> SimpleBox {
+    pub fn new(world: &mut World, transform: Isometry2, radx: f64, rady: f64, margin: f64) -> SimpleBox {
         let shape = make_box_shape(radx, rady);
         let body = make_simple_body(world, transform, shape.clone());
-        let collisionObject = make_simple_collider(world, shape.clone(), body);
+        let collisionObject = make_simple_collider(world, shape.clone(), body, margin);
         SimpleBox { shape, body, collisionObject }
     }
 
-    pub fn from_vector(world: &mut World, vector: Vector2<f64>, radx: f64, rady: f64) -> Self {
+    pub fn from_vector(world: &mut World, vector: Vector2<f64>, radx: f64, rady: f64, margin: f64) -> Self {
         let pos = Isometry2::new(vector, 0.0);
-        SimpleBox::new(world, pos, radx, rady)
+        SimpleBox::new(world, pos, radx, rady, margin)
     }
 }
 
@@ -134,14 +151,16 @@ fn canvas_get_ctx_2d(canvas: &HtmlCanvasElement) -> CanvasRenderingContext2d {
         .unwrap()
 }
 
-fn make_ground(world: &mut World) -> CollisionObjectHandle {
-    let margin = 0.01;
-    let radius_x = 125.0 - margin;
-    let radius_y = 1.0 - margin;
+fn make_ground(world: &mut World, cfg: &SceneConfig) -> CollisionObjectHandle {
+    let margin = cfg.margin.unwrap_or(0.);
+    let radius_x = cfg.ground_radx.unwrap_or(1.);
+    let radius_y = cfg.ground_rady.unwrap_or(1.);
     let radius = Vector2::new(radius_x, radius_y);
     let cuboid = Cuboid::new(radius);
     let shape = ShapeHandle::new(cuboid);
-    let pos = Isometry2::new(Vector2::new(0., 9. ), zero());
+    let x = cfg.ground_x.unwrap_or(0.);
+    let y = cfg.ground_y.unwrap_or(0.);
+    let pos = Isometry2::new(Vector2::new(x, y), zero());
     debug!("make_ground {:?}", (margin, radius_x, radius_y, radius, pos));
 
     world.add_collider(
@@ -162,8 +181,7 @@ fn make_simple_body(world: &mut World, transform: Isometry2, shape: ShapeHandle)
     world.add_rigid_body(transform, shape.inertia(0.1), shape.center_of_mass())
 }
 
-fn make_simple_collider(world: &mut World, shape: ShapeHandle, body: BodyHandle) -> CollisionObjectHandle {
-    let margin = 0.00;
+fn make_simple_collider(world: &mut World, shape: ShapeHandle, body: BodyHandle, margin: f64) -> CollisionObjectHandle {
     let transform = Isometry2::identity();
     let material = Material::default();
     world.add_collider(margin, shape, body, transform, material)
@@ -171,15 +189,22 @@ fn make_simple_collider(world: &mut World, shape: ShapeHandle, body: BodyHandle)
 
 // example nphysics scenes
 
-fn make_building(world: &mut World, x_pos: f64, width: usize, height: usize) {
+fn make_building(world: &mut World, x_pos: f64, width: usize, height: usize, cfg: &SceneConfig) {
 
-    let radx = 0.1;
-    let rady = 0.1;
-    let shiftx = radx * 2.0;
-    let shifty = rady * -2.0;
-    let centerx = shiftx * width as f64 / 2.0 - 3.;
+    let margin = cfg.margin.unwrap_or(0.);
+    let radx = cfg.box_radx.unwrap_or(1.);
+    let rady = cfg.box_rady.unwrap_or(1.);
+    let ground_x = cfg.ground_x.unwrap_or(0.);
+    let ground_y = cfg.ground_y.unwrap_or(0.);
+    let ground_rady = cfg.ground_rady.unwrap_or(0.);
+    let f1 = cfg.f1.unwrap_or(1.);
+    let f2 = cfg.f2.unwrap_or(1.);
+    //let shiftx = radx * 2.0;
+    //let shifty = rady * -2.0;
+    //let centerx = shiftx * width as f64 / 2.0 - 3.;
 
-    let ground_pos = Isometry2::new(Vector2::new(0., 8.00), zero()).translation.vector;
+    let ground_pos = Vector2::new(ground_x, ground_y - ground_rady);
+    //let ground_pos = Isometry2::new(ground, zero()).translation.vector;
 
     // for yi in 0usize..height {
     //     // for xi in 0..width {
@@ -191,16 +216,16 @@ fn make_building(world: &mut World, x_pos: f64, width: usize, height: usize) {
     //     // }
     // }
 
-    SimpleBox::from_vector(world, Vector2::new(1., ground_pos.y - rady), radx, rady);
-    SimpleBox::from_vector(world, Vector2::new(1., ground_pos.y - rady - 2.5 * rady), radx, rady);
-    SimpleBox::from_vector(world, Vector2::new(4., ground_pos.y - rady), radx, rady);
+    SimpleBox::from_vector(world, Vector2::new(1., ground_pos.y - f1 * rady), radx, rady, margin);
+    SimpleBox::from_vector(world, Vector2::new(1., ground_pos.y - f2 * rady), radx, rady, margin);
+    SimpleBox::from_vector(world, Vector2::new(4., ground_pos.y - f1 * rady), radx, rady, margin);
 }
 
-fn setup_nphysics_boxes_scene(world: &mut World) {
+fn setup_nphysics_boxes_scene(world: &mut World, cfg: &SceneConfig) {
     world.set_gravity(Vector2::new(0.0, 0.981));
 
-    make_ground(world);
-    make_building(world, 1., 3, 5);
+    make_ground(world, cfg);
+    make_building(world, 1., 3, 5, cfg);
     // make_building(world, 2., 3, 5);
     // make_building(world, 3., 4, 6);
     // make_building(world, 4., 3, 7);

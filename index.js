@@ -19,7 +19,17 @@ void async function main() {
     document.body.appendChild(canvas);
     const game = new js.Game(canvas, { width, height });
     window.game = game;
-    game.setup_boxes_scene();
+    game.setup_boxes_scene({
+        margin: 0.0,
+        box_radx: 0.1,
+        box_rady: 0.1,
+        ground_radx: 125,
+        ground_rady: 1,
+        ground_x: 0,
+        ground_y: 9,
+        f1: 1,
+        f2: 3.01,
+    });
 
     const loop = () => {
         const gamePad = controllers[0];
