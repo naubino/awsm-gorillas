@@ -31,6 +31,8 @@ void async function main() {
         ground_y: 9,
         f1: 1,
         f2: 2,
+        player_a: {x: 1.1, y: 6.6, radx: 0.2, rady: 0.3},
+        player_b: {x: 3, y: 6.8, radx: 0.2, rady: 0.3},
     });
 
     const loop = () => {

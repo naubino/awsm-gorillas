@@ -19,6 +19,7 @@ mod shapes;
 type World = nphysics2d::world::World<f64>;
 type Isometry2 = nalgebra::Isometry2<f64>;
 type ShapeHandle = ncollide2d::shape::ShapeHandle<f64>;
+type Num = Option<f64>;
 
 #[wasm_bindgen]
 extern {
@@ -38,6 +39,14 @@ pub struct GameConfig {
 }
 
 #[derive(Default, Debug, Serialize, Deserialize)]
+pub struct PlayerConfig {
+    x: f64,
+    y: f64,
+    radx: f64,
+    rady: f64,
+}
+
+#[derive(Default, Debug, Serialize, Deserialize)]
 pub struct ViewConfig {
     rotation: Option<f64>,
     x: Option<f64>,
@@ -45,7 +54,6 @@ pub struct ViewConfig {
     zoom: Option<f64>,
 }
 
-type Num = Option<f64>;
 
 #[derive(Default, Debug, Serialize, Deserialize)]
 pub struct SceneConfig {
@@ -58,6 +66,8 @@ pub struct SceneConfig {
     ground_y: Num,
     f1: Num,
     f2: Num,
+    player_a: PlayerConfig,
+    player_b: PlayerConfig,
 }
 
 #[wasm_bindgen]
@@ -78,10 +88,23 @@ impl Game {
         }
     }
 
-    pub fn setup_boxes_scene(&mut self, scene_conf: &JsValue) {
-        let scene_config: SceneConfig = scene_conf.into_serde().unwrap();
+    pub fn setup_boxes_scene(&mut self, raw_scene_config: &JsValue) {
+        let scene_config: SceneConfig = raw_scene_config.into_serde().unwrap();
 
-        setup_nphysics_boxes_scene(&mut self.world, &scene_config);
+        let mut world = &mut self.world;
+
+        world.set_gravity(Vector2::new(0.0, 0.981));
+
+        shapes::make_ground(world, &scene_config);
+
+        shapes::make_building(world, 1., 4, 5, &scene_config);
+        shapes::make_building(world, 2., 5, 8, &scene_config);
+        shapes::make_building(world, 3., 4, 6, &scene_config);
+        shapes::make_building(world, 4., 3, 7, &scene_config);
+
+        let gorilla_a = Gorilla::new(world, &scene_config.player_a);
+        let gorilla_b = Gorilla::new(world, &scene_config.player_b);
+
     }
 
     pub fn render_scene(&self, view_conf: &JsValue) {
@@ -123,51 +146,23 @@ impl SimpleBox {
     }
 }
 
-// example nphysics scenes
+struct Gorilla {
+    pub shape: ShapeHandle,
+    pub body: BodyHandle,
+    pub collisionObject: CollisionObjectHandle,
+}
 
-fn make_building(world: &mut World, x_pos: f64, width: usize, height: usize, cfg: &SceneConfig) {
+impl Gorilla {
+    pub fn new(world: &mut World, config: &PlayerConfig) -> Self {
+        let pos = Isometry2::new(Vector2::new(config.x, config.y), 0.0);
+        let shape = ShapeHandle::new(Cuboid::new(Vector2::new(config.radx, config.rady)));
+        let body = world.add_rigid_body(pos, shape.inertia(0.1), shape.center_of_mass());
+        let collisionObject = world.add_collider(0.0, shape.clone(), body, Isometry2::identity(), Material::default());
 
-    let margin = cfg.margin.unwrap_or(0.);
-    let radx = cfg.box_radx.unwrap_or(1.);
-    let rady = cfg.box_rady.unwrap_or(1.);
-    let ground_x = cfg.ground_x.unwrap_or(0.);
-    let ground_y = cfg.ground_y.unwrap_or(0.);
-    let ground_rady = cfg.ground_rady.unwrap_or(0.);
-    let f1 = cfg.f1.unwrap_or(1.);
-    let f2 = cfg.f2.unwrap_or(1.);
-    //let shiftx = radx * 2.0;
-    //let shifty = rady * -2.0;
-    //let centerx = shiftx * width as f64 / 2.0 - 3.;
-
-    let ground_pos = Vector2::new(ground_x, ground_y - ground_rady);
-    //let ground_pos = Isometry2::new(ground, zero()).translation.vector;
-
-    let w = radx + margin;
-    let h = rady + margin;
-
-    for yi in 0..height {
-        for xi in 0..width {
-            let x = xi as f64;
-            let y = yi as f64;
-
-            let vec = Vector2::new(x_pos + x * 2.0 * w, ground_y - ground_rady - h * (1. + margin + 2. * (y + margin)));
-
-            SimpleBox::from_vector(world, vec, radx, rady, margin);
-        }
+        Gorilla { shape, body, collisionObject }
     }
 }
 
-fn setup_nphysics_boxes_scene(world: &mut World, cfg: &SceneConfig) {
-    world.set_gravity(Vector2::new(0.0, 0.981));
-
-    shapes::make_ground(world, cfg);
-    make_building(world, 1., 3, 5, cfg);
-    make_building(world, 2., 3, 5, cfg);
-    make_building(world, 3., 4, 6, cfg);
-    make_building(world, 4., 3, 7, cfg);
-
-
-}
 
 fn render_nphysics_world(world: &World, ctx: &CanvasRenderingContext2d) {
     world.colliders().for_each(|collider| {
