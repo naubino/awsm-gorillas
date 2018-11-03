@@ -2,7 +2,7 @@ const DEBUG_GAME_PAD = true;
 const haveEvents = 'ongamepadconnected' in window;
 const controllers = {};
 
-window.viewConfig = {x: 0, y: 0, rotation: 1, zoom: 1};
+window.viewConfig = {x: 0, y: 0, rotation: 0, zoom: 1};
 
 void async function main() {
     const js = await import("./pkg");
@@ -23,11 +23,10 @@ void async function main() {
         const gamePad = controllers[0];
         if (gamePad) {
             const input = gamepad_normalize(gamePad);
-            console.log(input);
-            const { hori1, vert1, l2, hori2, vert2, r2, hori3, vert3 } = input;
+            const [ hori1, vert1, l2, hori2, vert2, r2, hori3, vert3 ] = input;
             window.viewConfig.x += hori1 * 8;
             window.viewConfig.y += vert1 * 8;
-            window.viewConfig.rotation = Math.atan2(vert2, hori2);
+            //window.viewConfig.rotation = Math.atan2(vert2, hori2);
             window.viewConfig.zoom += 0.01 * (-l2 + r2);
         }
 
@@ -56,7 +55,8 @@ function gamepad_normalize(gamePad) {
     }
     // don't know yet
     else console.error("I don't know this game pad mapping.");
-    return { hori1, vert1, l2, hori2, vert2, r2, hori3, vert3 };
+    const arr = [ hori1, vert1, l2, hori2, vert2, r2, hori3, vert3 ];
+    return arr.map((x) => x * x > 0.01 ? x : 0);
 }
 
 // I hope only 'val' is needed, not 'pressed'
