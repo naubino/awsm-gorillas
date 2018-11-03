@@ -1,8 +1,9 @@
+#![allow(unused_macros)]
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 
 use web_sys::{CanvasRenderingContext2d, HtmlCanvasElement};
-use web_sys::{Document, EventTarget, KeyboardEvent, console};
+use web_sys::{Document, EventTarget, KeyboardEvent};
 
 use serde_derive::{Serialize, Deserialize};
 
@@ -23,9 +24,9 @@ extern {
     #[wasm_bindgen(js_namespace = console)] pub fn error(msg: &str);
 }
 
-macro_rules! debug { ($($arg:tt)*) => ( debug(&format!($($arg)*));) }
-macro_rules! warn { ($($arg:tt)*) => ( warn(&format!($($arg)*));) }
-macro_rules! error { ($($arg:tt)*) => ( error(&format!($($arg)*));) }
+macro_rules! debug { ($($arg:tt)*) => (debug(&format!($($arg)*));) }
+macro_rules! warn { ($($arg:tt)*) => (warn(&format!($($arg)*));) }
+macro_rules! error { ($($arg:tt)*) => (error(&format!($($arg)*));) }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct GameConfig {
@@ -69,9 +70,9 @@ impl Game {
         let ctx = canvas_get_ctx_2d(&self.canvas);
         ctx.clear_rect(0.0, 0.0, self.canvas.width().into(), self.canvas.height().into());
         ctx.save();
-        ctx.translate(view_config.x.unwrap_or(0.0), view_config.y.unwrap_or(0.0));
-        ctx.rotate(view_config.rotation.unwrap_or(0.0));
-        ctx.scale(view_config.zoom.unwrap_or(1.0), view_config.zoom.unwrap_or(1.0));
+        ctx.translate(view_config.x.unwrap_or(0.0), view_config.y.unwrap_or(0.0)).unwrap();
+        ctx.rotate(view_config.rotation.unwrap_or(0.0)).unwrap();
+        ctx.scale(view_config.zoom.unwrap_or(1.0), view_config.zoom.unwrap_or(1.0)).unwrap();
         render_nphysics_world(&self.world, &ctx);
         ctx.restore();
     }
@@ -83,9 +84,9 @@ impl Game {
 }
 
 struct SimpleBox {
-    shape: ShapeHandle,
-    body: BodyHandle,
-    collisionObject: CollisionObjectHandle,
+    pub shape: ShapeHandle,
+    pub body: BodyHandle,
+    pub collisionObject: CollisionObjectHandle,
 }
 
 impl SimpleBox {
@@ -94,6 +95,11 @@ impl SimpleBox {
         let body = make_simple_body(world, transform, shape.clone());
         let collisionObject = make_simple_collider(world, shape.clone(), body);
         SimpleBox { shape, body, collisionObject }
+    }
+
+    pub fn from_vector(world: &mut World, vector: Vector2<f64>, radx: f64, rady: f64) -> Self {
+        let pos = Isometry2::new(vector, 0.0);
+        SimpleBox::new(world, pos, radx, rady)
     }
 }
 
@@ -137,6 +143,7 @@ fn make_ground(world: &mut World) -> CollisionObjectHandle {
     let shape = ShapeHandle::new(cuboid);
     let pos = Isometry2::new(Vector2::new(0., 9. ), zero());
     debug!("make_ground {:?}", (margin, radius_x, radius_y, radius, pos));
+
     world.add_collider(
         margin,
         shape,
@@ -156,7 +163,7 @@ fn make_simple_body(world: &mut World, transform: Isometry2, shape: ShapeHandle)
 }
 
 fn make_simple_collider(world: &mut World, shape: ShapeHandle, body: BodyHandle) -> CollisionObjectHandle {
-    let margin = 0.01;
+    let margin = 0.00;
     let transform = Isometry2::identity();
     let material = Material::default();
     world.add_collider(margin, shape, body, transform, material)
@@ -164,27 +171,41 @@ fn make_simple_collider(world: &mut World, shape: ShapeHandle, body: BodyHandle)
 
 // example nphysics scenes
 
-fn setup_nphysics_boxes_scene(world: &mut World) {
-    world.set_gravity(Vector2::new(0.0, 9.81));
+fn make_building(world: &mut World, x_pos: f64, width: usize, height: usize) {
 
-    let _ground = make_ground(world);
-
-    let num = 25;
     let radx = 0.1;
     let rady = 0.1;
     let shiftx = radx * 2.0;
-    let shifty = rady * 3.0;
-    let centerx = shiftx * num as f64 / 2.0;
-    let centery = shifty / 2.0;
+    let shifty = rady * -2.0;
+    let centerx = shiftx * width as f64 / 2.0 - 3.;
 
-    for i in 0usize..num {
-        for j in 0..num {
-            let x = i as f64 * shiftx - centerx;
-            let y = j as f64 * shifty + centery;
-            let pos = Isometry2::new(Vector2::new(x, y), 0.0);
-            SimpleBox::new(world, pos, radx, rady);
-        }
-    }
+    let ground_pos = Isometry2::new(Vector2::new(0., 8.00), zero()).translation.vector;
+
+    // for yi in 0usize..height {
+    //     // for xi in 0..width {
+    //     // let xi = 1;
+    //     //     let x = xi as f64 * shiftx - ground_pos.x + x_pos;
+    //     //     let y = ground_pos.y - yi as f64 * shifty;
+    //     //     let pos = Isometry2::new(Vector2::new(x, y), 0.0);
+    //         SimpleBox::new(world, pos, radx, rady);
+    //     // }
+    // }
+
+    SimpleBox::from_vector(world, Vector2::new(1., ground_pos.y - rady), radx, rady);
+    SimpleBox::from_vector(world, Vector2::new(1., ground_pos.y - rady - 2.5 * rady), radx, rady);
+    SimpleBox::from_vector(world, Vector2::new(4., ground_pos.y - rady), radx, rady);
+}
+
+fn setup_nphysics_boxes_scene(world: &mut World) {
+    world.set_gravity(Vector2::new(0.0, 0.981));
+
+    make_ground(world);
+    make_building(world, 1., 3, 5);
+    // make_building(world, 2., 3, 5);
+    // make_building(world, 3., 4, 6);
+    // make_building(world, 4., 3, 7);
+
+
 }
 
 fn render_nphysics_world(world: &World, ctx: &CanvasRenderingContext2d) {
@@ -205,13 +226,19 @@ fn render_nphysics_world(world: &World, ctx: &CanvasRenderingContext2d) {
                 let (w, h) = (size.x, size.y);
                 ctx.begin_path();
                 ctx.save();
-                ctx.scale(100., 100.);
+                ctx.scale(100., 100.).unwrap();
                 // ctx.translate(x - w + shape_offset.x, y - h + shape_offset.y);
-                ctx.translate(x - w , y - h);
-                ctx.rotate(rotation.angle());
-                ctx.rect(0.0, 0.0, w * 2., h * 2.);
+                ctx.translate(x , y).unwrap();
+                ctx.rotate(rotation.angle()).unwrap();
+                ctx.rect(-w, -h,  w * 2., h * 2.);
                 // ctx.rect(20.0 + pos.x * 100.0, pos.y * 100.0, 10.0, 10.0);
-                ctx.fill();
+                // ctx.fill();
+                ctx.set_line_width(0.01);
+                ctx.stroke();
+
+                ctx.set_fill_style(&JsValue::from(String::from("red")));
+                ctx.fill_rect(0., 0., 0.01, 0.01);
+
                 ctx.restore();
                 // console::log_2(&pos.x.into(), &pos.y.into());
             } else {

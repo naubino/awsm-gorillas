@@ -2,7 +2,7 @@ import { initGamePad, gamepadNormalize, controllers } from './gamepad';
 
 const DEBUG_GAME_PAD = true;
 
-window.viewConfig = {x: 0, y: 0, rotation: 0, zoom: 1};
+window.viewConfig = {x: 0, y: -500, rotation: 0, zoom: 1};
 
 void async function main() {
     const js = await import("./pkg");
