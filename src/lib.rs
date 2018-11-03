@@ -6,6 +6,7 @@ use wasm_bindgen::JsCast;
 extern crate web_sys;
 
 use web_sys::{CanvasRenderingContext2d, HtmlCanvasElement};
+use web_sys::{Document, EventTarget, KeyboardEvent};
 
 extern crate nalgebra as na;
 extern crate ncollide2d;
@@ -90,6 +91,28 @@ impl SimpleBox {
     }
 }
 
+#[wasm_bindgen]
+pub fn listen_for_keys() -> Result<(), JsValue> {
+    let document = get_document();
+
+    let cb = Closure::wrap(Box::new(move |v: KeyboardEvent| {
+        debug(&format!("down wityh all the keys: {:#?}", v.key()))
+    }) as Box<Fn(_)>);
+
+    let et: &EventTarget = document.as_ref();
+    et.add_event_listener_with_callback("keydown", cb.as_ref().unchecked_ref())?;
+    cb.forget();
+
+    Ok(())
+}
+
+fn get_document() -> Document {
+    let window = web_sys::window().expect("no global `window` exists");
+    let document = window.document().expect("should have a document on window");
+
+    document
+}
+
 fn canvas_get_context_2d(canvas: &HtmlCanvasElement) -> CanvasRenderingContext2d {
     canvas
         .get_context("2d")
@@ -106,7 +129,7 @@ fn make_ground(world: &mut World) -> CollisionObjectHandle {
     let radius = Vector2::new(radius_x, radius_y);
     let cuboid = Cuboid::new(radius);
     let shape = ShapeHandle::new(cuboid);
-    let pos = Isometry2::new(Vector2::new(0., 8.), na::zero());
+    let pos = Isometry2::new(Vector2::new(0., 9. ), na::zero());
     debug(&format!("make_ground {:?}", (margin, radius_x, radius_y, radius, pos)));
     world.add_collider(
         margin,
@@ -160,6 +183,7 @@ fn setup_nphysics_boxes_scene(world: &mut World) {
 
 fn render_nphysics_world(world: &World, ctx: CanvasRenderingContext2d) {
     world.colliders().for_each(|collider| {
+
         if let Some(body) = world.rigid_body(collider.data().body()) {
 
             let pos = body.position().translation.vector;
@@ -170,20 +194,25 @@ fn render_nphysics_world(world: &World, ctx: CanvasRenderingContext2d) {
             let shape = collider.shape();
 
             if let Some(cube) = shape.as_shape::<Cuboid<_>>() {
+                // let shape_offset = collider.position().translate.vector;
                 let size = cube.half_extents();
                 let (w, h) = (size.x, size.y);
                 ctx.begin_path();
                 ctx.save();
                 ctx.scale(100., 100.);
-                ctx.translate(x-w, y-h);
+                // ctx.translate(x - w + shape_offset.x, y - h + shape_offset.y);
+                ctx.translate(x - w , y - h);
                 ctx.rotate(rotation.angle());
-                ctx.rect(0.,0., w*2., h*2.);
+                ctx.rect(0.0, 0.0, w * 2., h * 2.);
                 // ctx.rect(20.0 + pos.x * 100.0, pos.y * 100.0, 10.0, 10.0);
                 ctx.fill();
                 ctx.restore();
                 // console::log_2(&pos.x.into(), &pos.y.into());
+            } else {
+                debug(&format!("not painting" ));
             }
         }
     });
+    // debug(&format!("painted colliders" ));
 }
 
