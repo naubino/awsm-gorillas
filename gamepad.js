@@ -1,8 +1,10 @@
 export const controllers = {};
 const haveEvents = 'ongamepadconnected' in window;
 
-function scangamepads() {
-    var gamepads = navigator.getGamepads ? navigator.getGamepads() : (navigator.webkitGetGamepads ? navigator.webkitGetGamepads() : []);
+export function scangamepads() {
+    var gamepads = navigator.getGamepads
+        ? navigator.getGamepads()
+        : (navigator.webkitGetGamepads ? navigator.webkitGetGamepads() : []);
     for (var i = 0; i < gamepads.length; i++) {
         if (gamepads[i]) {
             if (gamepads[i].index in controllers) {

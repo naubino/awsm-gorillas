@@ -1,4 +1,4 @@
-import { initGamePad, gamepadNormalize, controllers } from './gamepad';
+import { initGamePad, gamepadNormalize, controllers, scangamepads } from './gamepad';
 
 const DEBUG_GAME_PAD = !true;
 
@@ -37,10 +37,11 @@ void async function main() {
         if (gamePad) {
             const input = gamepadNormalize(gamePad);
             const [ hori1, vert1, l2, hori2, vert2, r2, hori3, vert3 ] = input;
-            window.viewConfig.x += hori1 * 8;
-            window.viewConfig.y += vert1 * 8;
+            window.viewConfig.x -= hori1 * 8;
+            window.viewConfig.y -= vert1 * 8;
             //window.viewConfig.rotation = Math.atan2(vert2, hori2);
             window.viewConfig.zoom += 0.01 * (-l2 + r2);
+            scangamepads();
         }
 
         game.step();
