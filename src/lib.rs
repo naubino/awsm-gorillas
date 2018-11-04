@@ -263,22 +263,46 @@ impl Game {
             .filter(|banana| banana.ttl >= 0.0)
             .collect();
         self.objects.bananas = new_bananas;
+
+        let new_bricks = self.objects.bricks
+            .drain(..)
+            .map(|mut brick| {
+                if let Some(ttl) = brick.ttl {
+                    brick.ttl = Some(ttl - dt);
+                }
+                brick
+            })
+            .inspect(|brick| if let Some(ttl) = brick.ttl {
+                if ttl < 0.0 {
+                    garbage.push(brick.collision_object);
+                }
+            })
+            .filter(|brick| brick.ttl.is_none() || brick.ttl.unwrap() >= 0.0)
+            .collect();
+        self.objects.bricks = new_bricks;
         self.world.remove_colliders(&garbage);
     }
 
     fn collisions(&mut self) {
         for event in self.world.contact_events().iter() {
             if let ContactEvent::Started(collider1, collider2) = event {
+                let delete_brick = Vec::new();
                 self.objects.bananas
                     .iter()
                     .filter(|b| (b.uid == collider1.uid() || b.uid == collider2.uid()))
                     .for_each(|banana| {
                         self.objects.bricks.iter()
                         .filter(|b| (b.uid == collider1.uid() || b.uid == collider2.uid()))
+                        .filter(|brick| banana.uid != brick.uid)
                         .for_each(|brick| {
-                            debug!("banana hits brick")
+                            debug!("banana {} hits brick {}", banana.uid, brick.uid);
+                            delete_brick.push(brick.uid)
                         });
                     });
+                self.objects.bricks.iter_mut().map(|brick| if delete_brick.iter().any(|&uid| uid == brick.uid) {
+                    brick.ttl = Some(3.0);
+                    debug!("brick will ttl {:?}", brick.ttl);
+                });
             }
 
         }

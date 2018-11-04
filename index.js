@@ -150,6 +150,9 @@ void async function main() {
         if (controllers[0]) controlPlayer(0, controllers[0]);
         if (controllers[1]) controlPlayer(1, controllers[1]);
 
+        if (controllers[0]) controlPlayer(0, keyboard);
+        if (controllers[1]) controlPlayer(1, keyboard);
+
         const dt = +timestamp - last_time;
         last_time = +timestamp;
 
