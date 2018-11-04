@@ -50,6 +50,95 @@ void async function main() {
         player_b: {x: 17.8, y: 0.4, radx: 0.2, rady: 0.3, inertia: 0.1 },
     });
 
+    const keyboard = {
+        axes : [0,0,0,0],
+        buttons : [
+            {value : 0, pressed : false},
+            {value : 0, pressed : false},
+            {value : 0, pressed : false},
+            {value : 0, pressed : false}]
+    };
+
+    document.addEventListener('keydown', (event) => {
+        const keyName = event.key;
+        if (keyName == " "){
+            keyboard.buttons[0].value = 1;
+            keyboard.buttons[0].pressed = true;
+        }
+        /*
+        if (keyName == "Control"){
+            keyboard.buttons[1].value = 1
+            keyboard.buttons[1].pressed = true;
+        }
+        */
+        if (keyName == "w"){
+            keyboard.axes[1] = -1;
+        }
+        if (keyName == "s"){
+            keyboard.axes[1] = 1;
+        }
+        if (keyName == "d"){
+            keyboard.axes[0] = 1;
+        }
+        if (keyName == "a")
+        {
+            keyboard.axes[0] = -1;
+        }
+        if (keyName == "ArrowUp"){
+            keyboard.axes[3] = -1;
+        }
+        if (keyName == "ArrowDown"){
+            keyboard.axes[3] = 1;
+        }
+        if (keyName == "ArrowRight"){
+            keyboard.axes[2] = 1;
+        }
+        if (keyName == "ArrowLeft")
+        {
+            keyboard.axes[2] = -1;
+        }
+    });
+
+    document.addEventListener('keyup', (event) => {
+        const keyName = event.key;
+        if(keyName == " "){
+            keyboard.buttons[0].value = 0;
+            keyboard.buttons[0].pressed = false;
+        }
+        /*
+        if (keyName == "Control"){
+            keyboard.buttons[1].value = 0
+            keyboard.buttons[1].pressed = false;
+        }
+        */
+        if (keyName == "w"){
+            keyboard.axes[1] = 0;
+        }
+        if (keyName == "s"){
+            keyboard.axes[1] = 0;
+        }
+        if (keyName == "d"){
+            keyboard.axes[0] = 0;
+        }
+        if (keyName == "a")
+        {
+            keyboard.axes[0] = 0;
+        }
+        if (keyName == "ArrowUp"){
+            keyboard.axes[3] = 0;
+        }
+        if (keyName == "ArrowDown"){
+            keyboard.axes[3] = 0;
+        }
+        if (keyName == "ArrowRight"){
+            keyboard.axes[2] = 0;
+        }
+        if (keyName == "ArrowLeft")
+        {
+            keyboard.axes[2] = 0;
+        }
+    })
+
     let last_time = +performance.now();
     const loop = (timestamp) => {
         try { scangamepads(); } catch {}
