@@ -77,12 +77,14 @@ pub struct SceneConfig {
     buildings: Vec<BuildingConfig>,
     player_a: PlayerConfig,
     player_b: PlayerConfig,
+    first_shot: Shot,
 }
 
 #[derive(Default)]
 struct GameEntities {
     gorillas: Vec<Gorilla>,
     boxen: Vec<shapes::SimpleBox>,
+    bananas: Vec<Banana>,
 }
 
 #[wasm_bindgen]
@@ -154,6 +156,7 @@ impl Game {
         self.objects.gorillas.push(gorilla_a);
         self.objects.gorillas.push(gorilla_b);
 
+        self.shoot(&scene_config.first_shot);
     }
 
     pub fn render_scene(&self, raw_view_config: &JsValue) {
@@ -162,11 +165,34 @@ impl Game {
         let ctx = dom_helpers::canvas_get_ctx_2d(&self.canvas);
         ctx.clear_rect(0.0, 0.0, self.canvas.width().into(), self.canvas.height().into());
         ctx.save();
-        ctx.scale(view_config.zoom.unwrap_or(1.0), view_config.zoom.unwrap_or(1.0)).unwrap();
         ctx.translate(view_config.x.unwrap_or(0.0), view_config.y.unwrap_or(0.0)).unwrap();
         ctx.rotate(view_config.rotation.unwrap_or(0.0)).unwrap();
+        ctx.scale(view_config.zoom.unwrap_or(1.0), view_config.zoom.unwrap_or(1.0)).unwrap();
+        
         render_nphysics_world(&self.world, &ctx);
         self.render_players(&ctx);
+        
+        for banana in &self.objects.bananas {
+            self.render_banana(&ctx, banana);
+        }
+        
+        ctx.restore();
+    }
+
+    fn render_banana(&self, ctx: &CanvasRenderingContext2d, banana: &Banana) {
+        let pos = self.pos_of(banana.body);
+        let size = banana.sprite.size;
+        let angle = self.rot_of(banana.body);
+        ctx.begin_path();
+        ctx.save();
+        ctx.scale(100., 100.).unwrap();
+        ctx.translate(pos.x , pos.y).unwrap();
+        ctx.rotate(angle).unwrap();
+        ctx.rect(-size.x * 0.5, - size.y * 0.5, size.x, size.y);
+        ctx.set_line_width(0.02);
+        ctx.stroke();
+        ctx.set_fill_style(&JsValue::from(String::from("yellow")));
+        ctx.fill_rect(-size.x * 0.5, - size.y * 0.5, size.x, size.y);
         ctx.restore();
     }
 
@@ -193,8 +219,60 @@ impl Game {
         self.world.step();
     }
 
+    pub fn shoot(&mut self, shot: &Shot) {
+        let banana = Banana::new(&mut self.world, &shot.config);
+        let pos = Isometry2::new(Vector2::new(shot.x, shot.y), shot.rot);
+        let vel = Vector2::new(f64::cos(shot.rot), f64::sin(shot.rot)) * shot.power;
+        if let Some(rb) = self.world.rigid_body_mut(banana.body) {
+            rb.set_position(pos);
+            rb.set_linear_velocity(vel);
+            self.objects.bananas.push(banana);
+        }
+    }
 }
 
+#[wasm_bindgen]
+#[derive(Default, Serialize, Deserialize, Debug)]
+pub struct Shot {
+    x: f64,
+    y: f64,
+    rot: f64,
+    power: f64,
+    config: BananaConfig,
+}
+
+pub struct Sprite {
+    pub size: Vector2<f64>,
+}
+
+pub struct Banana {
+    pub shape: ShapeHandle,
+    pub body: BodyHandle,
+    pub collisionObject: CollisionObjectHandle,
+    pub sprite: Sprite,
+}
+
+#[wasm_bindgen]
+#[derive(Default, Serialize, Deserialize, Debug)]
+pub struct BananaConfig {
+    pub w: f64,
+    pub h: f64,
+    pub inertia: f64,
+}
+
+impl Banana {
+    pub fn new(world: &mut World, config: &BananaConfig) -> Self {
+        let pos = Isometry2::new(zero(), 0.0);
+        let shape = ShapeHandle::new(Cuboid::new(Vector2::new(config.w * 0.5, config.h * 0.5)));
+        let body = world.add_rigid_body(pos, shape.inertia(config.inertia), shape.center_of_mass());
+        let collisionObject = world.add_collider(0.0, shape.clone(), body, Isometry2::identity(), Material::default());
+
+        let spriteSize = Vector2::new(config.w, config.h);
+        let sprite = Sprite { size: spriteSize };
+
+        Banana { shape, body, collisionObject, sprite }
+    }
+}
 
 struct Gorilla {
     pub shape: ShapeHandle,

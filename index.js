@@ -44,6 +44,18 @@ void async function main() {
 
         player_a: {x: 1.3, y: 3.9, radx: 0.2, rady: 0.3},
         player_b: {x: 7.8,   y: 1.4, radx: 0.2, rady: 0.3},
+
+        first_shot: {
+            x: 1.3,
+            y: 3,
+            rot: Math.PI * 2,
+            power: 20,
+            config: {
+                w: 0.1,
+                h: 0.1,
+                inertia: 10,
+            }
+        }
     });
 
     const loop = () => {
