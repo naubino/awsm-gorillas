@@ -48,12 +48,12 @@ void async function main() {
         first_shot: {
             x: 1.3,
             y: 3,
-            rot: Math.PI * 2,
-            power: 20,
+            rot: Math.PI * 1.6,
+            power: 10,
             config: {
                 w: 0.1,
-                h: 0.1,
-                inertia: 10,
+                h: 0.4,
+                inertia: 3,
             }
         }
     });
