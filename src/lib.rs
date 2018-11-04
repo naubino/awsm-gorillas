@@ -84,7 +84,7 @@ pub struct SceneConfig {
 struct GameEntities {
     gorillas: Vec<Gorilla>,
     boxen: Vec<shapes::SimpleBox>,
-    bananas: HashMap<usize, Banana>,
+    bananas: Vec<Banana>,
 }
 
 #[wasm_bindgen]
@@ -172,7 +172,7 @@ impl Game {
         render_nphysics_world(&self.world, &ctx);
         self.render_players(&ctx);
 
-        for (_, banana) in &self.objects.bananas {
+        for banana in &self.objects.bananas {
             self.render_banana(&ctx, banana);
         }
 
@@ -217,6 +217,7 @@ impl Game {
 
     pub fn step(&mut self) {
         self.world.step();
+        self.gc();
     }
 
     pub fn shoot(&mut self, raw_shot: &JsValue, r: f64) {
@@ -227,6 +228,24 @@ impl Game {
     fn new_id(&mut self) -> usize {
         self.id_base += 1;
         self.id_base
+    }
+
+    fn gc(&mut self) {
+        let mut garbage = Vec::new();
+        let new_bananas = self.objects.bananas
+            .drain(..)
+            .map(|mut banana| {
+                banana.ttl = banana.ttl - 0.1;
+                banana
+            })
+            .inspect(|banana| if banana.ttl < 0.0 {
+                garbage.push(banana.collision_object);
+            })
+            .filter(|banana| banana.ttl >= 0.0)
+            .collect();
+        self.objects.bananas = new_bananas;
+        self.world.remove_colliders(&garbage);
+        debug!("garbage {:?}", garbage);
     }
 
     fn _shoot(&mut self, shot: &Shot, r: f64) {
@@ -240,7 +259,7 @@ impl Game {
             rb.set_position(pos);
             rb.set_linear_velocity(vel);
             rb.set_angular_velocity(r);
-            self.objects.bananas.insert(banana_id, banana);
+            self.objects.bananas.push(banana);
         }
     }
 }
@@ -265,6 +284,7 @@ pub struct BananaConfig {
     pub w: f64,
     pub h: f64,
     pub inertia: f64,
+    ttl: f64,
 }
 
 pub struct Banana {
@@ -273,6 +293,7 @@ pub struct Banana {
     pub collision_object: CollisionObjectHandle,
     pub sprite: Sprite,
     id: usize,
+    ttl: f64,
 }
 
 impl Banana {
@@ -285,7 +306,7 @@ impl Banana {
         let sprite_size = Vector2::new(config.w, config.h);
         let sprite = Sprite { size: sprite_size };
 
-        Banana { shape, body, collision_object, sprite, id }
+        Banana { shape, body, collision_object, sprite, id, ttl: config.ttl }
     }
 }
 

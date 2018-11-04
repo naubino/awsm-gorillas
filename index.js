@@ -48,7 +48,7 @@ void async function main() {
 
     const loop = () => {
         try { scangamepads(); } catch {}
-        
+
         if (controllers[0]) controlPlayer(0, controllers[0]);
         if (controllers[1]) controlPlayer(1, controllers[1]);
 
@@ -62,11 +62,11 @@ void async function main() {
 
     function controlPlayer(player, gamePad) {
         const input = gamepadNormalize(gamePad);
-                
+
         const [ hori1, vert1, l2, hori2, vert2, r2, hori3, vert3 ] = input;
-        
+
         window.viewConfig.zoom += 0.01 * (-l2 + r2);
-        
+
         if (gamePad.buttons[0].pressed) {
             const shot = {
                 x: 1.3,
@@ -77,6 +77,7 @@ void async function main() {
                     w: 0.4,
                     h: 0.08,
                     inertia: 0.1,
+                    ttl: 5,
                 }
             };
             game.shoot(shot, (Math.random() - 0.5) * 100);
