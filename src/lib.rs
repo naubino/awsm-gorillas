@@ -1,4 +1,4 @@
-#![allow(unused_macros)]
+#![allow(unused_macros, unused_imports)]
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 
@@ -12,6 +12,8 @@ use ncollide2d::shape::{Cuboid};
 use ncollide2d::world::CollisionObjectHandle;
 use nphysics2d::object::{BodyHandle, Material};
 use nphysics2d::volumetric::Volumetric;
+
+use std::collections::HashMap;
 
 mod dom_helpers;
 mod shapes;
@@ -73,8 +75,6 @@ pub struct SceneConfig {
     ground_rady: Num,
     ground_x: Num,
     ground_y: Num,
-    f1: Num,
-    f2: Num,
     buildings: Vec<BuildingConfig>,
     player_a: PlayerConfig,
     player_b: PlayerConfig,
@@ -84,7 +84,7 @@ pub struct SceneConfig {
 struct GameEntities {
     gorillas: Vec<Gorilla>,
     boxen: Vec<shapes::SimpleBox>,
-    bananas: Vec<Banana>,
+    bananas: HashMap<usize, Banana>,
 }
 
 #[wasm_bindgen]
@@ -92,6 +92,7 @@ pub struct Game {
     canvas: HtmlCanvasElement,
     objects: GameEntities,
     world: World,
+    id_base: usize,
 }
 
 #[wasm_bindgen]
@@ -104,6 +105,7 @@ impl Game {
             canvas: canvas,
             objects: GameEntities::default(),
             world: World::new(),
+            id_base: 0,
         }
     }
 
@@ -166,14 +168,14 @@ impl Game {
         ctx.translate(view_config.x.unwrap_or(0.0), view_config.y.unwrap_or(0.0)).unwrap();
         ctx.rotate(view_config.rotation.unwrap_or(0.0)).unwrap();
         ctx.scale(view_config.zoom.unwrap_or(1.0), view_config.zoom.unwrap_or(1.0)).unwrap();
-        
+
         render_nphysics_world(&self.world, &ctx);
         self.render_players(&ctx);
-        
-        for banana in &self.objects.bananas {
+
+        for (_, banana) in &self.objects.bananas {
             self.render_banana(&ctx, banana);
         }
-        
+
         ctx.restore();
     }
 
@@ -222,15 +224,23 @@ impl Game {
         self._shoot(&shot, r);
     }
 
+    fn new_id(&mut self) -> usize {
+        self.id_base += 1;
+        self.id_base
+    }
+
     fn _shoot(&mut self, shot: &Shot, r: f64) {
-        let banana = Banana::new(&mut self.world, &shot.config);
+
+        let banana_id = self.new_id();
+
+        let banana = Banana::new(&mut self.world, &shot.config, banana_id);
         let pos = Isometry2::new(Vector2::new(shot.x, shot.y), shot.rot);
         let vel = Vector2::new(f64::cos(shot.rot), f64::sin(shot.rot)) * shot.power;
         if let Some(rb) = self.world.rigid_body_mut(banana.body) {
             rb.set_position(pos);
             rb.set_linear_velocity(vel);
             rb.set_angular_velocity(r);
-            self.objects.bananas.push(banana);
+            self.objects.bananas.insert(banana_id, banana);
         }
     }
 }
@@ -249,13 +259,6 @@ pub struct Sprite {
     pub size: Vector2<f64>,
 }
 
-pub struct Banana {
-    pub shape: ShapeHandle,
-    pub body: BodyHandle,
-    pub collisionObject: CollisionObjectHandle,
-    pub sprite: Sprite,
-}
-
 #[wasm_bindgen]
 #[derive(Default, Serialize, Deserialize, Debug)]
 pub struct BananaConfig {
@@ -264,24 +267,32 @@ pub struct BananaConfig {
     pub inertia: f64,
 }
 
+pub struct Banana {
+    pub shape: ShapeHandle,
+    pub body: BodyHandle,
+    pub collision_object: CollisionObjectHandle,
+    pub sprite: Sprite,
+    id: usize,
+}
+
 impl Banana {
-    pub fn new(world: &mut World, config: &BananaConfig) -> Self {
+    pub fn new(world: &mut World, config: &BananaConfig, id: usize) -> Self {
         let pos = Isometry2::new(zero(), 0.0);
         let shape = ShapeHandle::new(Cuboid::new(Vector2::new(config.w * 0.5, config.h * 0.5)));
         let body = world.add_rigid_body(pos, shape.inertia(config.inertia), shape.center_of_mass());
-        let collisionObject = world.add_collider(0.0, shape.clone(), body, Isometry2::identity(), Material::default());
+        let collision_object = world.add_collider(0.0, shape.clone(), body, Isometry2::identity(), Material::default());
 
-        let spriteSize = Vector2::new(config.w, config.h);
-        let sprite = Sprite { size: spriteSize };
+        let sprite_size = Vector2::new(config.w, config.h);
+        let sprite = Sprite { size: sprite_size };
 
-        Banana { shape, body, collisionObject, sprite }
+        Banana { shape, body, collision_object, sprite, id }
     }
 }
 
 struct Gorilla {
     pub shape: ShapeHandle,
     pub body: BodyHandle,
-    pub collisionObject: CollisionObjectHandle,
+    pub collision_object: CollisionObjectHandle,
 }
 
 impl Gorilla {
@@ -289,9 +300,9 @@ impl Gorilla {
         let pos = Isometry2::new(Vector2::new(config.x, config.y), 0.0);
         let shape = ShapeHandle::new(Cuboid::new(Vector2::new(config.radx, config.rady)));
         let body = world.add_rigid_body(pos, shape.inertia(config.inertia), shape.center_of_mass());
-        let collisionObject = world.add_collider(0.0, shape.clone(), body, Isometry2::identity(), Material::default());
+        let collision_object = world.add_collider(0.0, shape.clone(), body, Isometry2::identity(), Material::default());
 
-        Gorilla { shape, body, collisionObject }
+        Gorilla { shape, body, collision_object }
     }
 
 

@@ -24,21 +24,21 @@ macro_rules! debug { ($($arg:tt)*) => (debug(&format!($($arg)*));) }
 pub struct SimpleBox {
     pub shape: ShapeHandle,
     pub body: BodyHandle,
-    pub collisionObject: CollisionObjectHandle,
+    pub collision_object: CollisionObjectHandle,
 }
 
 impl SimpleBox {
     pub fn new(world: &mut World, transform: Isometry2, radx: f64, rady: f64, margin: f64) -> SimpleBox {
         let shape = ShapeHandle::new(Cuboid::new(Vector2::new(radx, rady)));
         let body = world.add_rigid_body(transform, shape.inertia(0.1), shape.center_of_mass());
-        let collisionObject = world.add_collider(
+        let collision_object = world.add_collider(
             margin,
             shape.clone(),
             body,
             Isometry2::identity(),
             Material::new(0.0, 08.0)
             );
-        SimpleBox { shape, body, collisionObject }
+        SimpleBox { shape, body, collision_object }
     }
 
     pub fn from_vector(world: &mut World, vector: Vector2<f64>, radx: f64, rady: f64, margin: f64) -> Self {
@@ -76,11 +76,6 @@ pub fn make_building(world: &mut World, x_pos: f64, width: usize, height: usize,
     let ground_x = cfg.ground_x.unwrap_or(0.);
     let ground_y = cfg.ground_y.unwrap_or(0.);
     let ground_rady = cfg.ground_rady.unwrap_or(0.);
-    let f1 = cfg.f1.unwrap_or(1.);
-    let f2 = cfg.f2.unwrap_or(1.);
-
-    let ground_pos = Vector2::new(ground_x, ground_y - ground_rady);
-    //let ground_pos = Isometry2::new(ground, zero()).translation.vector;
 
     let w = radx + margin;
     let h = rady + margin;
