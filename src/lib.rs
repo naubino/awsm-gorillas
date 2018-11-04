@@ -2,7 +2,7 @@
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 
-use web_sys::{CanvasRenderingContext2d, HtmlCanvasElement};
+use web_sys::{CanvasRenderingContext2d, HtmlCanvasElement, HtmlImageElement};
 use web_sys::{EventTarget, KeyboardEvent};
 
 use serde_derive::{Serialize, Deserialize};
@@ -101,12 +101,13 @@ pub struct Game {
     objects: GameEntities,
     world: World,
     id_base: usize,
+    gorilla_png: HtmlImageElement,
 }
 
 #[wasm_bindgen]
 impl Game {
     #[wasm_bindgen(constructor)]
-    pub fn new(canvas: HtmlCanvasElement, config: &JsValue) -> Game {
+    pub fn new(canvas: HtmlCanvasElement, gorilla_png: HtmlImageElement, config: &JsValue) -> Game {
         let conf: GameConfig = config.into_serde().unwrap();
         debug!("game config: {:?}", conf);
         Game {
@@ -114,6 +115,7 @@ impl Game {
             objects: GameEntities::default(),
             world: World::new(),
             id_base: 0,
+            gorilla_png
         }
     }
 
@@ -209,16 +211,14 @@ impl Game {
             let pos = self.pos_of(gorilla.body);
             let size = self.size_of(&gorilla.shape);
             let angle = self.rot_of(gorilla.body);
-            ctx.begin_path();
+
             ctx.save();
             ctx.scale(100., 100.).unwrap();
             ctx.translate(pos.x , pos.y).unwrap();
             ctx.rotate(angle).unwrap();
-            ctx.rect(-size.x * 0.5, - size.y * 0.5, size.x, size.y);
-            ctx.set_line_width(0.02);
-            ctx.stroke();
-            ctx.set_fill_style(&JsValue::from(String::from("green")));
-            ctx.fill_rect(-size.x * 0.5, - size.y * 0.5, size.x, size.y);
+
+            ctx.draw_image_with_html_image_element_and_dw_and_dh(&self.gorilla_png, -size.x * 0.5, -size.y * 0.5, size.x, size.y);
+
             ctx.restore();
         }
     }

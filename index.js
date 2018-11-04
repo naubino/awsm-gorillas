@@ -9,6 +9,10 @@ void async function main() {
 
     initGamePad(DEBUG_GAME_PAD);
 
+    const gorilla_img = document.createElement('img');
+    gorilla_img.src = "gorilla.png";
+    gorilla_img.id = "gorilla-png";
+
     const canvas = document.createElement('canvas');
     canvas.style.border = "1px solid black";
     const [width, height] = [800, 600];
@@ -17,7 +21,7 @@ void async function main() {
 
     document.body.appendChild(canvas);
 
-    const game = new wasm.Game(canvas, { width, height });
+    const game = new wasm.Game(canvas, gorilla_img, { width, height });
     window.game = game;
 
     const margin = 0.00000000001;

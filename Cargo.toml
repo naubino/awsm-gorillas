@@ -30,6 +30,7 @@ features = [
   'Document',
   'Element',
   'HtmlCanvasElement',
+  'HtmlImageElement',
   'Window',
   'EventTarget',
   'KeyboardEvent',
