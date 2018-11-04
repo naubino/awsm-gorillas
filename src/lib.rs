@@ -62,6 +62,7 @@ pub struct BuildingConfig {
     x: f64,
     w: usize,
     h: usize,
+    fill_style: String,
 }
 
 #[derive(Default, Debug, Serialize, Deserialize)]
@@ -158,8 +159,8 @@ impl Game {
         shapes::make_ground(world, &scene_config);
 
         for building in &scene_config.buildings {
-            let &BuildingConfig {x, w, h} = building;
-            self.objects.bricks.append(&mut shapes::make_building(world, x, w, h, &scene_config));
+            // let &BuildingConfig {x, w, h, fill_style } = building;
+            self.objects.bricks.append(&mut shapes::make_building(world, building.x, building.w, building.h, &building.fill_style, &scene_config));
         }
 
         let gorilla_a = Gorilla::new(world, &scene_config.player_a);
@@ -179,12 +180,39 @@ impl Game {
         ctx.rotate(view_config.rotation.unwrap_or(0.0)).unwrap();
         ctx.scale(view_config.zoom.unwrap_or(1.0), view_config.zoom.unwrap_or(1.0)).unwrap();
 
-        render_nphysics_world(&self.world, &ctx);
+        // render_nphysics_world(&self.world, &ctx);
+
+        ctx.save();
+        ctx.set_line_width(0.02);
+        ctx.scale(100., 100.).unwrap();
+        for brick in &self.objects.bricks {
+            self.render_brick(&ctx, brick);
+        }
+        ctx.restore();
+
         self.render_players(&ctx);
 
         for banana in &self.objects.bananas {
             self.render_banana(&ctx, banana);
         }
+
+        ctx.restore();
+    }
+
+    fn render_brick(&self, ctx: &CanvasRenderingContext2d, brick: &shapes::Brick) {
+        let pos = self.pos_of(brick.body);
+        let size = self.size_of(&brick.shape);
+        let angle = self.rot_of(brick.body);
+
+        ctx.save();
+        ctx.begin_path();
+        ctx.translate(pos.x , pos.y).unwrap();
+        ctx.rotate(angle).unwrap();
+
+        ctx.rect(-size.x * 0.5, - size.y * 0.5, size.x, size.y);
+        ctx.stroke();
+        ctx.set_fill_style(&JsValue::from(&brick.fill_style));
+        ctx.fill();
 
         ctx.restore();
     }

@@ -27,10 +27,11 @@ pub struct Brick {
     pub collision_object: CollisionObjectHandle,
     pub uid: usize,
     pub ttl: Option<f64>,
+    pub fill_style: String,
 }
 
 impl Brick {
-    pub fn new(world: &mut World, transform: Isometry2, radx: f64, rady: f64, margin: f64) -> Brick {
+    pub fn new(world: &mut World, transform: Isometry2, radx: f64, rady: f64, margin: f64, fill_style: &str) -> Brick {
         let shape = ShapeHandle::new(Cuboid::new(Vector2::new(radx, rady)));
         let body = world.add_rigid_body(transform, shape.inertia(0.1), shape.center_of_mass());
         let collision_object = world.add_collider(
@@ -39,15 +40,15 @@ impl Brick {
             body,
             Isometry2::identity(),
             Material::new(0.0, 08.0)
-            );
+        );
         let uid = collision_object.uid();
         let ttl: Option<f64> = None;
-        Brick { shape, body, collision_object, uid, ttl }
+        Brick { shape, body, collision_object, uid, ttl, fill_style: fill_style.into() }
     }
 
-    pub fn from_vector(world: &mut World, vector: Vector2<f64>, radx: f64, rady: f64, margin: f64) -> Self {
+    pub fn from_vector(world: &mut World, vector: Vector2<f64>, radx: f64, rady: f64, margin: f64, fill_style: &str) -> Self {
         let pos = Isometry2::new(vector, 0.0);
-        Brick::new(world, pos, radx, rady, margin)
+        Brick::new(world, pos, radx, rady, margin, fill_style)
     }
 }
 
@@ -72,7 +73,7 @@ pub fn make_ground(world: &mut World, cfg: &SceneConfig) -> CollisionObjectHandl
     )
 }
 
-pub fn make_building(world: &mut World, x_pos: f64, width: usize, height: usize, cfg: &SceneConfig) -> Vec<Brick> {
+pub fn make_building(world: &mut World, x_pos: f64, width: usize, height: usize, fill_style: &str, cfg: &SceneConfig) -> Vec<Brick> {
 
     let margin = cfg.margin.unwrap_or(0.);
     let radx = cfg.box_radx.unwrap_or(1.);
@@ -97,13 +98,13 @@ pub fn make_building(world: &mut World, x_pos: f64, width: usize, height: usize,
                 let corner_pos = Vector2::new(
                     x_pos + x * 1.0 * w,
                     ground_y - ground_rady - h * (1. + margin + 2. * (y + margin)));
-                bricks.push(Brick::from_vector(world, corner_pos, radx * 0.5, rady, margin));
+                bricks.push(Brick::from_vector(world, corner_pos, radx * 0.5, rady, margin, fill_style));
             }
             if yi % 2 == 1 && xi == width-1 {
                 let corner_pos = Vector2::new(
                     x_pos + x * 1.0 * w + w * width as f64,
                     ground_y - ground_rady - h * (1. + margin + 2. * (y + margin)));
-                bricks.push(Brick::from_vector(world, corner_pos, radx * 0.5, rady, margin));
+                bricks.push(Brick::from_vector(world, corner_pos, radx * 0.5, rady, margin, fill_style));
             }
 
             let pos = Vector2::new(
@@ -112,7 +113,7 @@ pub fn make_building(world: &mut World, x_pos: f64, width: usize, height: usize,
                 );
 
 
-            bricks.push(Brick::from_vector(world, pos, radx, rady, margin));
+            bricks.push(Brick::from_vector(world, pos, radx, rady, margin, fill_style));
         }
     }
     bricks.push(
@@ -124,7 +125,9 @@ pub fn make_building(world: &mut World, x_pos: f64, width: usize, height: usize,
             ),
             radx * width as f64 + radx * 0.5,
             rady,
-            margin)
-            );
+            margin,
+            fill_style
+        )
+    );
     bricks
 }

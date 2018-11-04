@@ -24,6 +24,8 @@ void async function main() {
     const game = new wasm.Game(canvas, gorilla_img, { width, height });
     window.game = game;
 
+    const style = [ '#04aaac', '#ac0204', '#acaaac', '#aa04ac', '#aaac04' ]
+
     const margin = 0.00000000001;
     game.set_scene({
         margin,
@@ -38,15 +40,15 @@ void async function main() {
         f2: 2,
 
         buildings: [
-            {x:  0.5, w: 5, h: 21},
-            {x:  2.9, w: 3, h: 12},
-            {x:  4.5, w: 3, h: 15},
+            {x:  0.5, w: 5, h: 21, fill_style: style[0] },
+            {x:  2.9, w: 3, h: 12, fill_style: style[1] },
+            {x:  4.5, w: 3, h: 15, fill_style: style[2] },
 
-            {x:  8.8, w: 7, h: 38},
+            {x:  8.8, w: 7, h: 38, fill_style: style[3] },
 
-            {x: 14.3, w: 3, h: 15},
-            {x: 15.9, w: 3, h: 12},
-            {x: 17.5, w: 5, h: 21},
+            {x: 14.3, w: 3, h: 15, fill_style: style[4] },
+            {x: 15.9, w: 3, h: 12, fill_style: style[1] },
+            {x: 17.5, w: 5, h: 21, fill_style: style[0] },
             // {x: 8.2, w: 8, h: 69},
         ],
 
