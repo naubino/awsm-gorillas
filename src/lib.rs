@@ -225,7 +225,7 @@ impl Game {
 
     pub fn step(&mut self) {
         self.world.step();
-        self.collisions();
+        // self.collisions();
         self.gc();
     }
 
@@ -259,11 +259,11 @@ impl Game {
     fn collisions(&self) {
         for event in self.world.contact_events().iter() {
             if let ContactEvent::Started(collider1, collider2) = event {
-                debug!("collision {:?}", (collider1.uid(), collider2.uid()));
+                // debug!("collision {:?}", (collider1.uid(), collider2.uid()));
             }
         }
     }
-    
+
     pub fn gorilla_pos(&self, index: usize) -> JsValue {
         let pos = self.pos_of(self.objects.gorillas[index].body);
         JsValue::from_serde(&XY { x: pos.x, y: pos.y }).unwrap()

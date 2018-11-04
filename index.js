@@ -2,7 +2,7 @@ import { initGamePad, gamepadNormalize, controllers, scangamepads } from './game
 
 const DEBUG_GAME_PAD = true;
 
-window.viewConfig = {x: 0, y: 300, rotation: 0, zoom: 0.7};
+window.viewConfig = {x: 0, y: 2.7 * 100, rotation: 0, zoom: 0.4};
 
 void async function main() {
     const wasm = await import("./pkg");
@@ -11,7 +11,7 @@ void async function main() {
 
     const canvas = document.createElement('canvas');
     canvas.style.border = "1px solid black";
-    const [width, height] = [800, 800];
+    const [width, height] = [800, 600];
     canvas.width = width;
     canvas.height = height;
 
@@ -24,8 +24,8 @@ void async function main() {
     game.set_scene({
         margin,
         gravity: 9.81,
-        box_radx: 0.15 - margin,
-        box_rady: 0.09 - margin,
+        box_radx: 0.21 - margin,
+        box_rady: 0.10 - margin,
         ground_radx: 125 - margin,
         ground_rady: 1 - margin,
         ground_x: 0,
@@ -34,16 +34,20 @@ void async function main() {
         f2: 2,
 
         buildings: [
-            {x: 0.2, w: 5, h: 17},
-            {x: 2.2, w: 5, h: 18},
-            {x: 7.3, w: 5, h: 34},
-            {x: 8.9, w: 5, h: 31},
-            {x: 10.5, w: 6, h: 35},
+            {x:  0.5, w: 5, h: 21},
+            {x:  2.9, w: 3, h: 12},
+            {x:  4.5, w: 3, h: 15},
+
+            {x:  8.8, w: 7, h: 38},
+
+            {x: 14.3, w: 3, h: 15},
+            {x: 15.9, w: 3, h: 12},
+            {x: 17.5, w: 5, h: 21},
             // {x: 8.2, w: 8, h: 69},
         ],
 
-        player_a: {x: 1.3, y: 3.9, radx: 0.2, rady: 0.3, inertia: 0.1 },
-        player_b: {x: 7.8,   y: 1.4, radx: 0.2, rady: 0.3, inertia: 0.1 },
+        player_a: {x: 1.2,  y: 0.9, radx: 0.2, rady: 0.3, inertia: 0.1 },
+        player_b: {x: 17.8, y: 0.4, radx: 0.2, rady: 0.3, inertia: 0.1 },
     });
 
     for (let i = 0; i < 10; i++) {
@@ -91,7 +95,7 @@ void async function main() {
                 rot: rot,
                 power: Math.max(8, 20 * mag),
                 config: {
-                    w: 0.2,
+                    w: 0.4,
                     h: 0.08,
                     inertia: inertia,
                     ttl: 20,
