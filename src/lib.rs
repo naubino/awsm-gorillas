@@ -223,14 +223,19 @@ impl Game {
         }
     }
 
-    pub fn step(&mut self) {
+    pub fn step(&mut self, dt: f64) {
         for gorilla in &mut self.objects.gorillas {
-            gorilla.time_to_next_shot -= 0.033;
+            gorilla.time_to_next_shot -= dt;
         }
 
-        self.world.step();
-        // self.collisions();
-        self.gc();
+        let ts = self.world.timestep();
+        let mut time = dt;
+        while time > 0.0 {
+            self.world.step();
+            time -= ts;
+        }
+
+        self.gc(dt);
     }
 
     pub fn shoot(&mut self, raw_shot: &JsValue, r: f64) {
@@ -243,12 +248,12 @@ impl Game {
         self.id_base
     }
 
-    fn gc(&mut self) {
+    fn gc(&mut self, dt: f64) {
         let mut garbage = Vec::new();
         let new_bananas = self.objects.bananas
             .drain(..)
             .map(|mut banana| {
-                banana.ttl = banana.ttl - 0.1;
+                banana.ttl = banana.ttl - dt;
                 banana
             })
             .inspect(|banana| if banana.ttl < 0.0 {
@@ -276,7 +281,7 @@ impl Game {
     fn _shoot(&mut self, shot: &Shot, r: f64) {
 
         if let Some(ref mut gorilla) = self.objects.gorillas.get_mut(shot.gorilla_id) {
-            if (gorilla.time_to_next_shot > 0.) {
+            if gorilla.time_to_next_shot > 0. {
                 return;
             } else {
                 gorilla.time_to_next_shot = shot.config.cost;

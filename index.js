@@ -50,13 +50,17 @@ void async function main() {
         player_b: {x: 17.8, y: 0.4, radx: 0.2, rady: 0.3, inertia: 0.1 },
     });
 
-    const loop = () => {
+    let last_time = +performance.now();
+    const loop = (timestamp) => {
         try { scangamepads(); } catch {}
 
         if (controllers[0]) controlPlayer(0, controllers[0]);
         if (controllers[1]) controlPlayer(1, controllers[1]);
 
-        game.step();
+        const dt = +timestamp - last_time;
+        last_time = +timestamp;
+
+        game.step(1 / 60);
         game.render_scene(viewConfig);
 
         requestAnimationFrame(loop);
