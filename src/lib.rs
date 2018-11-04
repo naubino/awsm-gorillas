@@ -162,9 +162,9 @@ impl Game {
         let ctx = dom_helpers::canvas_get_ctx_2d(&self.canvas);
         ctx.clear_rect(0.0, 0.0, self.canvas.width().into(), self.canvas.height().into());
         ctx.save();
+        ctx.scale(view_config.zoom.unwrap_or(1.0), view_config.zoom.unwrap_or(1.0)).unwrap();
         ctx.translate(view_config.x.unwrap_or(0.0), view_config.y.unwrap_or(0.0)).unwrap();
         ctx.rotate(view_config.rotation.unwrap_or(0.0)).unwrap();
-        ctx.scale(view_config.zoom.unwrap_or(1.0), view_config.zoom.unwrap_or(1.0)).unwrap();
         render_nphysics_world(&self.world, &ctx);
         self.render_players(&ctx);
         ctx.restore();
