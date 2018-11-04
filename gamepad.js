@@ -16,25 +16,28 @@ export function scangamepads() {
     }
 }
 
-export function initGamePad(debugGamePad = false) {
+function connecthandler(e) {
+    addgamepad(e.gamepad);
+}
 
-    function connecthandler(e) {
-        addgamepad(e.gamepad);
-    }
+function addgamepad(gamepad) {
+    controllers[gamepad.index] = gamepad;
+    if (debugGamePad) addGamePad(gamepad);
+}
 
-    function addgamepad(gamepad) {
-        controllers[gamepad.index] = gamepad;
-        if (debugGamePad) addGamePad(gamepad);
-    }
+function disconnecthandler(e) {
+    removegamepad(e.gamepad);
+}
 
-    function disconnecthandler(e) {
-        removegamepad(e.gamepad);
-    }
+function removegamepad(gamepad) {
+    if (debugGamePad) debug.removeGamePad(gamepad);
+    delete controllers[gamepad.index];
+}
 
-    function removegamepad(gamepad) {
-        if (debugGamePad) debug.removeGamePad(gamepad);
-        delete controllers[gamepad.index];
-    }
+let debugGamePad = false;
+
+export function initGamePad(_debugGamePad = false) {
+    debugGamePad = _debugGamePad;
 
     window.addEventListener("gamepadconnected", connecthandler);
     window.addEventListener("gamepaddisconnected", disconnecthandler);

@@ -44,6 +44,7 @@ pub struct PlayerConfig {
     y: f64,
     radx: f64,
     rady: f64,
+    inertia: f64,
 }
 
 #[derive(Default, Debug, Serialize, Deserialize)]
@@ -77,7 +78,6 @@ pub struct SceneConfig {
     buildings: Vec<BuildingConfig>,
     player_a: PlayerConfig,
     player_b: PlayerConfig,
-    first_shot: Shot,
 }
 
 #[derive(Default)]
@@ -155,8 +155,6 @@ impl Game {
 
         self.objects.gorillas.push(gorilla_a);
         self.objects.gorillas.push(gorilla_b);
-
-        self.shoot(&scene_config.first_shot);
     }
 
     pub fn render_scene(&self, raw_view_config: &JsValue) {
@@ -219,13 +217,19 @@ impl Game {
         self.world.step();
     }
 
-    pub fn shoot(&mut self, shot: &Shot) {
+    pub fn shoot(&mut self, raw_shot: &JsValue, r: f64) {
+        let shot: Shot = raw_shot.into_serde().unwrap();
+        self._shoot(&shot, r);
+    }
+
+    fn _shoot(&mut self, shot: &Shot, r: f64) {
         let banana = Banana::new(&mut self.world, &shot.config);
         let pos = Isometry2::new(Vector2::new(shot.x, shot.y), shot.rot);
         let vel = Vector2::new(f64::cos(shot.rot), f64::sin(shot.rot)) * shot.power;
         if let Some(rb) = self.world.rigid_body_mut(banana.body) {
             rb.set_position(pos);
             rb.set_linear_velocity(vel);
+            rb.set_angular_velocity(r);
             self.objects.bananas.push(banana);
         }
     }
@@ -284,7 +288,7 @@ impl Gorilla {
     pub fn new(world: &mut World, config: &PlayerConfig) -> Self {
         let pos = Isometry2::new(Vector2::new(config.x, config.y), 0.0);
         let shape = ShapeHandle::new(Cuboid::new(Vector2::new(config.radx, config.rady)));
-        let body = world.add_rigid_body(pos, shape.inertia(0.1), shape.center_of_mass());
+        let body = world.add_rigid_body(pos, shape.inertia(config.inertia), shape.center_of_mass());
         let collisionObject = world.add_collider(0.0, shape.clone(), body, Isometry2::identity(), Material::default());
 
         Gorilla { shape, body, collisionObject }

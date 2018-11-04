@@ -42,37 +42,45 @@ void async function main() {
             // {x: 8.2, w: 8, h: 69},
         ],
 
-        player_a: {x: 1.3, y: 3.9, radx: 0.2, rady: 0.3},
-        player_b: {x: 7.8,   y: 1.4, radx: 0.2, rady: 0.3},
-
-        first_shot: {
-            x: 1.3,
-            y: 3,
-            rot: Math.PI * 1.6,
-            power: 10,
-            config: {
-                w: 0.1,
-                h: 0.4,
-                inertia: 3,
-            }
-        }
+        player_a: {x: 1.3, y: 3.9, radx: 0.2, rady: 0.3, inertia: 0.1 },
+        player_b: {x: 7.8,   y: 1.4, radx: 0.2, rady: 0.3, inertia: 0.1 },
     });
 
     const loop = () => {
-        const gamePad = controllers[0];
-        if (gamePad) {
-            const input = gamepadNormalize(gamePad);
-            const [ hori1, vert1, l2, hori2, vert2, r2, hori3, vert3 ] = input;
-            window.viewConfig.x -= hori1 * 8;
-            window.viewConfig.y -= vert1 * 8;
-            //window.viewConfig.rotation = Math.atan2(vert2, hori2);
-            window.viewConfig.zoom += 0.01 * (-l2 + r2);
-            scangamepads();
-        }
+        try { scangamepads(); } catch {}
+        
+        if (controllers[0]) controlPlayer(0, controllers[0]);
+        if (controllers[1]) controlPlayer(1, controllers[1]);
 
         game.step();
         game.render_scene(viewConfig);
+
         requestAnimationFrame(loop);
     }
     loop();
+
+
+    function controlPlayer(player, gamePad) {
+        const input = gamepadNormalize(gamePad);
+                
+        const [ hori1, vert1, l2, hori2, vert2, r2, hori3, vert3 ] = input;
+        
+        window.viewConfig.zoom += 0.01 * (-l2 + r2);
+        
+        if (gamePad.buttons[0].pressed) {
+            const shot = {
+                x: 1.3,
+                y: 3,
+                rot: vert1 && hori1 ? Math.atan2(vert1, hori1) : 0,
+                power: 20,
+                config: {
+                    w: 0.4,
+                    h: 0.08,
+                    inertia: 0.1,
+                }
+            };
+            game.shoot(shot, (Math.random() - 0.5) * 100);
+        }
+    }
+
 }()
