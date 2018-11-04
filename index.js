@@ -2,7 +2,7 @@ import { initGamePad, gamepadNormalize, controllers, scangamepads } from './game
 
 const DEBUG_GAME_PAD = !true;
 
-window.viewConfig = {x: 0, y: -10, rotation: 0, zoom: 1};
+window.viewConfig = {x: 30, y: 200, rotation: 0, zoom: .6};
 
 void async function main() {
     const wasm = await import("./pkg");
@@ -20,12 +20,12 @@ void async function main() {
     const game = new wasm.Game(canvas, { width, height });
     window.game = game;
 
-    const margin = 0.000000001;
+    const margin = 0.00000000001;
     game.set_scene({
         margin,
-        gravity: 0.8,
-        box_radx: 0.1 - margin,
-        box_rady: 0.1 - margin,
+        gravity: 5.81,
+        box_radx: 0.15 - margin,
+        box_rady: 0.09 - margin,
         ground_radx: 125 - margin,
         ground_rady: 1 - margin,
         ground_x: 0,
@@ -34,28 +34,16 @@ void async function main() {
         f2: 2,
 
         buildings: [
-            {x: 0.2, w: 3, h: 18},
-            {x: 1.1, w: 3, h: 8},
-            {x: 2.0, w: 4, h: 6},
-            {x: 3.0, w: 3, h: 8},
-            {x: 4.0, w: 2, h: 9},
-            //{x: 5.2, w: 5, h: 24},
-            {x: 6.2, w: 5, h: 28},
-            //{x: 7.4, w: 2, h: 39},
-            // {x: 8.4, w: 2, h: 39},
-            // {x: 9.4, w: 2, h: 39},
-            // {x: 10.4, w: 2, h: 39},
-            // {x: 11.4, w: 2, h: 39},
-            // {x: 12.4, w: 2, h: 39},
-            // {x: 14.4, w: 2, h: 39},
-            // {x: 16.4, w: 2, h: 39},
-            // {x: 18.4, w: 2, h: 39},
-            // {x: 20.4, w: 2, h: 39},
-            // {x: 22.4, w: 2, h: 39},
+            {x: 0.2, w: 5, h: 18},
+            {x: 2.2, w: 5, h: 18},
+            {x: 7.3, w: 5, h: 34},
+            {x: 8.9, w: 5, h: 31},
+            {x: 10.5, w: 5, h: 29},
+            // {x: 8.2, w: 8, h: 69},
         ],
 
-        player_a: {x: 1.3, y: 5.6, radx: 0.2, rady: 0.3},
-        player_b: {x: 6.8,   y: 1.8, radx: 0.2, rady: 0.3},
+        player_a: {x: 1.3, y: 3.9, radx: 0.2, rady: 0.3},
+        player_b: {x: 7.8,   y: 1.4, radx: 0.2, rady: 0.3},
     });
 
     const loop = () => {

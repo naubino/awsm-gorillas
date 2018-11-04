@@ -82,7 +82,7 @@ pub struct SceneConfig {
 #[derive(Default)]
 struct GameEntities {
     gorillas: Vec<Gorilla>,
-    boxen: Vec<SimpleBox>,
+    boxen: Vec<shapes::SimpleBox>,
 }
 
 #[wasm_bindgen]
@@ -195,25 +195,6 @@ impl Game {
 
 }
 
-struct SimpleBox {
-    pub shape: ShapeHandle,
-    pub body: BodyHandle,
-    pub collisionObject: CollisionObjectHandle,
-}
-
-impl SimpleBox {
-    pub fn new(world: &mut World, transform: Isometry2, radx: f64, rady: f64, margin: f64) -> SimpleBox {
-        let shape = ShapeHandle::new(Cuboid::new(Vector2::new(radx, rady)));
-        let body = world.add_rigid_body(transform, shape.inertia(0.1), shape.center_of_mass());
-        let collisionObject = world.add_collider(margin, shape.clone(), body, Isometry2::identity(), Material::default());
-        SimpleBox { shape, body, collisionObject }
-    }
-
-    pub fn from_vector(world: &mut World, vector: Vector2<f64>, radx: f64, rady: f64, margin: f64) -> Self {
-        let pos = Isometry2::new(vector, 0.0);
-        SimpleBox::new(world, pos, radx, rady, margin)
-    }
-}
 
 struct Gorilla {
     pub shape: ShapeHandle,
