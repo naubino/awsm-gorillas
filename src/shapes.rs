@@ -21,14 +21,16 @@ type ShapeHandle = ncollide2d::shape::ShapeHandle<f64>;
 
 macro_rules! debug { ($($arg:tt)*) => (debug(&format!($($arg)*));) }
 
-pub struct SimpleBox {
+pub struct Brick {
     pub shape: ShapeHandle,
     pub body: BodyHandle,
     pub collision_object: CollisionObjectHandle,
+    pub uid: usize,
+    pub ttl: Option<f64>,
 }
 
-impl SimpleBox {
-    pub fn new(world: &mut World, transform: Isometry2, radx: f64, rady: f64, margin: f64) -> SimpleBox {
+impl Brick {
+    pub fn new(world: &mut World, transform: Isometry2, radx: f64, rady: f64, margin: f64) -> Brick {
         let shape = ShapeHandle::new(Cuboid::new(Vector2::new(radx, rady)));
         let body = world.add_rigid_body(transform, shape.inertia(0.1), shape.center_of_mass());
         let collision_object = world.add_collider(
@@ -38,12 +40,14 @@ impl SimpleBox {
             Isometry2::identity(),
             Material::new(0.0, 08.0)
             );
-        SimpleBox { shape, body, collision_object }
+        let uid = collision_object.uid();
+        let ttl: Option<f64> = None;
+        Brick { shape, body, collision_object, uid, ttl }
     }
 
     pub fn from_vector(world: &mut World, vector: Vector2<f64>, radx: f64, rady: f64, margin: f64) -> Self {
         let pos = Isometry2::new(vector, 0.0);
-        SimpleBox::new(world, pos, radx, rady, margin)
+        Brick::new(world, pos, radx, rady, margin)
     }
 }
 
@@ -68,7 +72,7 @@ pub fn make_ground(world: &mut World, cfg: &SceneConfig) -> CollisionObjectHandl
     )
 }
 
-pub fn make_building(world: &mut World, x_pos: f64, width: usize, height: usize, cfg: &SceneConfig) {
+pub fn make_building(world: &mut World, x_pos: f64, width: usize, height: usize, cfg: &SceneConfig) -> Vec<Brick> {
 
     let margin = cfg.margin.unwrap_or(0.);
     let radx = cfg.box_radx.unwrap_or(1.);
@@ -79,6 +83,8 @@ pub fn make_building(world: &mut World, x_pos: f64, width: usize, height: usize,
 
     let w = radx + margin;
     let h = rady + margin;
+
+    let mut bricks = Vec::with_capacity(height * (width + 1) + 4);
 
     for yi in 0..height {
         for xi in 0..width {
@@ -91,13 +97,13 @@ pub fn make_building(world: &mut World, x_pos: f64, width: usize, height: usize,
                 let corner_pos = Vector2::new(
                     x_pos + x * 1.0 * w,
                     ground_y - ground_rady - h * (1. + margin + 2. * (y + margin)));
-                SimpleBox::from_vector(world, corner_pos, radx * 0.5, rady, margin);
+                bricks.push(Brick::from_vector(world, corner_pos, radx * 0.5, rady, margin));
             }
             if yi % 2 == 1 && xi == width-1 {
                 let corner_pos = Vector2::new(
                     x_pos + x * 1.0 * w + w * width as f64,
                     ground_y - ground_rady - h * (1. + margin + 2. * (y + margin)));
-                SimpleBox::from_vector(world, corner_pos, radx * 0.5, rady, margin);
+                bricks.push(Brick::from_vector(world, corner_pos, radx * 0.5, rady, margin));
             }
 
             let pos = Vector2::new(
@@ -106,12 +112,19 @@ pub fn make_building(world: &mut World, x_pos: f64, width: usize, height: usize,
                 );
 
 
-            SimpleBox::from_vector(world, pos, radx, rady, margin);
+            bricks.push(Brick::from_vector(world, pos, radx, rady, margin));
         }
     }
-    SimpleBox::from_vector(world,
-    Vector2::new(
-        x_pos + width as f64 * radx * 0.5 + radx * 2.0,
-        ground_y - ground_rady - h * (2. * (height as f64))
-    ), radx * width as f64 + radx * 0.5, rady, margin);
+    bricks.push(
+        Brick::from_vector(
+            world,
+            Vector2::new(
+                x_pos + width as f64 * radx * 0.5 + radx * 2.0,
+                ground_y - ground_rady - h * (2. * (height as f64))
+            ),
+            radx * width as f64 + radx * 0.5,
+            rady,
+            margin)
+            );
+    bricks
 }

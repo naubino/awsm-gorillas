@@ -91,7 +91,7 @@ pub struct SceneConfig {
 #[derive(Default)]
 struct GameEntities {
     gorillas: Vec<Gorilla>,
-    boxen: Vec<shapes::SimpleBox>,
+    bricks: Vec<shapes::Brick>,
     bananas: Vec<Banana>,
 }
 
@@ -159,7 +159,7 @@ impl Game {
 
         for building in &scene_config.buildings {
             let &BuildingConfig {x, w, h} = building;
-            shapes::make_building(world, x, w, h, &scene_config);
+            self.objects.bricks.append(&mut shapes::make_building(world, x, w, h, &scene_config));
         }
 
         let gorilla_a = Gorilla::new(world, &scene_config.player_a);
@@ -235,6 +235,7 @@ impl Game {
             time -= ts;
         }
 
+        self.collisions();
         self.gc(dt);
     }
 
@@ -265,11 +266,21 @@ impl Game {
         self.world.remove_colliders(&garbage);
     }
 
-    fn collisions(&self) {
+    fn collisions(&mut self) {
         for event in self.world.contact_events().iter() {
             if let ContactEvent::Started(collider1, collider2) = event {
-                // debug!("collision {:?}", (collider1.uid(), collider2.uid()));
+                self.objects.bananas
+                    .iter()
+                    .filter(|b| (b.uid == collider1.uid() || b.uid == collider2.uid()))
+                    .for_each(|banana| {
+                        self.objects.bricks.iter()
+                        .filter(|b| (b.uid == collider1.uid() || b.uid == collider2.uid()))
+                        .for_each(|brick| {
+                            debug!("banana hits brick")
+                        });
+                    });
             }
+
         }
     }
 
@@ -332,12 +343,12 @@ pub struct Banana {
     pub body: BodyHandle,
     pub collision_object: CollisionObjectHandle,
     pub sprite: Sprite,
-    id: usize,
+    uid: usize,
     ttl: f64,
 }
 
 impl Banana {
-    pub fn new(world: &mut World, config: &BananaConfig, id: usize) -> Self {
+    pub fn new(world: &mut World, config: &BananaConfig, uid: usize) -> Self {
         let pos = Isometry2::new(zero(), 0.0);
         let shape = ShapeHandle::new(Cuboid::new(Vector2::new(config.w * 0.5, config.h * 0.5)));
         let body = world.add_rigid_body(pos, shape.inertia(config.inertia), shape.center_of_mass());
@@ -346,7 +357,7 @@ impl Banana {
         let sprite_size = Vector2::new(config.w, config.h);
         let sprite = Sprite { size: sprite_size };
 
-        Banana { shape, body, collision_object, sprite, id, ttl: config.ttl }
+        Banana { shape, body, collision_object, sprite, uid, ttl: config.ttl }
     }
 }
 
