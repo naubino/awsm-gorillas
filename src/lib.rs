@@ -174,7 +174,8 @@ impl Game {
         let view_config: ViewConfig = raw_view_config.into_serde().unwrap();
 
         let ctx = dom_helpers::canvas_get_ctx_2d(&self.canvas);
-        ctx.clear_rect(0.0, 0.0, self.canvas.width().into(), self.canvas.height().into());
+        ctx.set_fill_style(&JsValue::from(String::from("#0402ac")));
+        ctx.fill_rect(0.0, 0.0, self.canvas.width().into(), self.canvas.height().into());
         ctx.save();
         ctx.translate(view_config.x.unwrap_or(0.0), view_config.y.unwrap_or(0.0)).unwrap();
         ctx.rotate(view_config.rotation.unwrap_or(0.0)).unwrap();
