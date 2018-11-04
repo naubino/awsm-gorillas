@@ -1,6 +1,6 @@
 import { initGamePad, gamepadNormalize, controllers, scangamepads } from './gamepad';
 
-const DEBUG_GAME_PAD = !true;
+const DEBUG_GAME_PAD = true;
 
 window.viewConfig = {x: 0, y: 300, rotation: 0, zoom: 0.7};
 
@@ -46,6 +46,10 @@ void async function main() {
         player_b: {x: 7.8,   y: 1.4, radx: 0.2, rady: 0.3, inertia: 0.1 },
     });
 
+    for (let i = 0; i < 10; i++) {
+        game.step();
+    }
+
     const loop = () => {
         try { scangamepads(); } catch {}
 
@@ -65,19 +69,32 @@ void async function main() {
 
         const [ hori1, vert1, l2, hori2, vert2, r2, hori3, vert3 ] = input;
 
+        window.viewConfig.x -= hori2 * 10;
+        window.viewConfig.y -= vert2 * 10;
         window.viewConfig.zoom += 0.01 * (-l2 + r2);
 
-        if (gamePad.buttons[0].pressed) {
+        const pos = game.gorilla_pos(player);
+        const mag = Math.sqrt(vert1*vert1 + hori1*hori1);
+        const rot = vert1 || hori1 ? Math.atan2(vert1, hori1) : 0;
+
+        const btnX = gamePad.buttons[0].pressed;
+        const btnO = gamePad.buttons[1].pressed;
+        const btnSqr = gamePad.buttons[2].pressed;
+        const btnTri = gamePad.buttons[3].pressed;
+
+        const inertia = btnX ? 0.1 : btnO ? 1 : 0;
+
+        if (btnX || btnO) {
             const shot = {
-                x: 1.3,
-                y: 3,
-                rot: vert1 && hori1 ? Math.atan2(vert1, hori1) : 0,
-                power: 20,
+                x: pos.x + hori1 * 0.2,
+                y: pos.y + vert1 * 0.2,
+                rot: rot,
+                power: Math.max(8, 20 * mag),
                 config: {
-                    w: 0.4,
+                    w: 0.2,
                     h: 0.08,
-                    inertia: 0.1,
-                    ttl: 5,
+                    inertia: inertia,
+                    ttl: 20,
                 }
             };
             game.shoot(shot, (Math.random() - 0.5) * 100);

@@ -35,6 +35,13 @@ macro_rules! debug { ($($arg:tt)*) => (debug(&format!($($arg)*));) }
 macro_rules! warn { ($($arg:tt)*) => (warn(&format!($($arg)*));) }
 macro_rules! error { ($($arg:tt)*) => (error(&format!($($arg)*));) }
 
+#[wasm_bindgen]
+#[derive(Debug, Serialize, Deserialize)]
+pub struct XY {
+    x: f64,
+    y: f64,
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct GameConfig {
     width: Option<f64>,
@@ -256,6 +263,11 @@ impl Game {
             }
         }
     }
+    
+    pub fn gorilla_pos(&self, index: usize) -> JsValue {
+        let pos = self.pos_of(self.objects.gorillas[index].body);
+        JsValue::from_serde(&XY { x: pos.x, y: pos.y }).unwrap()
+    }
 
     fn _shoot(&mut self, shot: &Shot, r: f64) {
 
@@ -379,4 +391,3 @@ fn render_nphysics_world(world: &World, ctx: &CanvasRenderingContext2d) {
     });
     // debug!("painted colliders" );
 }
-
