@@ -10,6 +10,7 @@ use serde_derive::{Serialize, Deserialize};
 use nalgebra::{Vector2, zero};
 use ncollide2d::shape::{Cuboid};
 use ncollide2d::world::CollisionObjectHandle;
+use ncollide2d::events::ContactEvent;
 use nphysics2d::object::{BodyHandle, Material};
 use nphysics2d::volumetric::Volumetric;
 
@@ -217,6 +218,7 @@ impl Game {
 
     pub fn step(&mut self) {
         self.world.step();
+        self.collisions();
         self.gc();
     }
 
@@ -245,7 +247,14 @@ impl Game {
             .collect();
         self.objects.bananas = new_bananas;
         self.world.remove_colliders(&garbage);
-        debug!("garbage {:?}", garbage);
+    }
+
+    fn collisions(&self) {
+        for event in self.world.contact_events().iter() {
+            if let ContactEvent::Started(collider1, collider2) = event {
+                debug!("collision {:?}", (collider1.uid(), collider2.uid()));
+            }
+        }
     }
 
     fn _shoot(&mut self, shot: &Shot, r: f64) {
