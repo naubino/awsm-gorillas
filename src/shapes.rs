@@ -114,4 +114,9 @@ pub fn make_building(world: &mut World, x_pos: f64, width: usize, height: usize,
             SimpleBox::from_vector(world, pos, radx, rady, margin);
         }
     }
+    SimpleBox::from_vector(world,
+    Vector2::new(
+        x_pos + width as f64 * radx * 0.5 + radx * 2.0,
+        ground_y - ground_rady - h * (2. * (height as f64))
+    ), radx * width as f64 + radx * 0.5, rady, margin);
 }

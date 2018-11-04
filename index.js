@@ -23,7 +23,7 @@ void async function main() {
     const margin = 0.00000000001;
     game.set_scene({
         margin,
-        gravity: 5.81,
+        gravity: 9.81,
         box_radx: 0.15 - margin,
         box_rady: 0.09 - margin,
         ground_radx: 125 - margin,
@@ -34,11 +34,11 @@ void async function main() {
         f2: 2,
 
         buildings: [
-            {x: 0.2, w: 5, h: 18},
+            {x: 0.2, w: 5, h: 17},
             {x: 2.2, w: 5, h: 18},
             {x: 7.3, w: 5, h: 34},
             {x: 8.9, w: 5, h: 31},
-            {x: 10.5, w: 5, h: 29},
+            {x: 10.5, w: 6, h: 35},
             // {x: 8.2, w: 8, h: 69},
         ],
 
