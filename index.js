@@ -1,6 +1,6 @@
 import { initGamePad, gamepadNormalize, controllers, scangamepads } from './gamepad';
 
-const DEBUG_GAME_PAD = true;
+const DEBUG_GAME_PAD = !true;
 
 window.viewConfig = {x: 0, y: 2.7 * 100, rotation: 0, zoom: 0.4};
 
@@ -50,10 +50,6 @@ void async function main() {
         player_b: {x: 17.8, y: 0.4, radx: 0.2, rady: 0.3, inertia: 0.1 },
     });
 
-    for (let i = 0; i < 10; i++) {
-        game.step();
-    }
-
     const loop = () => {
         try { scangamepads(); } catch {}
 
@@ -86,21 +82,33 @@ void async function main() {
         const btnSqr = gamePad.buttons[2].pressed;
         const btnTri = gamePad.buttons[3].pressed;
 
-        const inertia = btnX ? 0.1 : btnO ? 1 : 0;
+        
+        const x = pos.x + hori1 * 0.2;
+        const y = pos.y + vert1 * 0.2;
+        const power = Math.max(8, 20 * mag);
+
+
+        let shot = { x, y, rot, power, gorilla_id: player };
+        if (btnX) {
+            shot.config = {
+                w: 0.2,
+                h: 0.08,
+                inertia: 0.1,
+                ttl: 20,
+                cost: 0.03,
+            };
+        }
+        if (btnO) {
+            shot.config = {
+                w: 0.3,
+                h: 0.1,
+                inertia: 1,
+                ttl: 20,
+                cost: 0.3,
+            }
+        }
 
         if (btnX || btnO) {
-            const shot = {
-                x: pos.x + hori1 * 0.2,
-                y: pos.y + vert1 * 0.2,
-                rot: rot,
-                power: Math.max(8, 20 * mag),
-                config: {
-                    w: 0.4,
-                    h: 0.08,
-                    inertia: inertia,
-                    ttl: 20,
-                }
-            };
             game.shoot(shot, (Math.random() - 0.5) * 100);
         }
     }

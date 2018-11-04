@@ -224,6 +224,10 @@ impl Game {
     }
 
     pub fn step(&mut self) {
+        for gorilla in &mut self.objects.gorillas {
+            gorilla.time_to_next_shot -= 0.033;
+        }
+
         self.world.step();
         // self.collisions();
         self.gc();
@@ -271,6 +275,14 @@ impl Game {
 
     fn _shoot(&mut self, shot: &Shot, r: f64) {
 
+        if let Some(ref mut gorilla) = self.objects.gorillas.get_mut(shot.gorilla_id) {
+            if (gorilla.time_to_next_shot > 0.) {
+                return;
+            } else {
+                gorilla.time_to_next_shot = shot.config.cost;
+            }
+        }
+
         let banana_id = self.new_id();
 
         let banana = Banana::new(&mut self.world, &shot.config, banana_id);
@@ -292,6 +304,7 @@ pub struct Shot {
     y: f64,
     rot: f64,
     power: f64,
+    gorilla_id: usize,
     config: BananaConfig,
 }
 
@@ -306,6 +319,7 @@ pub struct BananaConfig {
     pub h: f64,
     pub inertia: f64,
     ttl: f64,
+    cost: f64,
 }
 
 pub struct Banana {
@@ -335,6 +349,7 @@ struct Gorilla {
     pub shape: ShapeHandle,
     pub body: BodyHandle,
     pub collision_object: CollisionObjectHandle,
+    pub time_to_next_shot: f64,
 }
 
 impl Gorilla {
@@ -343,8 +358,9 @@ impl Gorilla {
         let shape = ShapeHandle::new(Cuboid::new(Vector2::new(config.radx, config.rady)));
         let body = world.add_rigid_body(pos, shape.inertia(config.inertia), shape.center_of_mass());
         let collision_object = world.add_collider(0.0, shape.clone(), body, Isometry2::identity(), Material::default());
+        let time_to_next_shot = 0.;
 
-        Gorilla { shape, body, collision_object }
+        Gorilla { shape, body, collision_object, time_to_next_shot }
     }
 
 
@@ -378,9 +394,6 @@ fn render_nphysics_world(world: &World, ctx: &CanvasRenderingContext2d) {
                 // ctx.fill();
                 ctx.set_line_width(0.01);
                 ctx.stroke();
-
-                ctx.set_fill_style(&JsValue::from(String::from("red")));
-                ctx.fill_rect(0., 0., 0.01, 0.01);
 
                 ctx.restore();
                 // console::log_2(&pos.x.into(), &pos.y.into());
