@@ -2,7 +2,7 @@ import { initGamePad, gamepadNormalize, controllers, scangamepads } from './game
 
 const DEBUG_GAME_PAD = !true;
 
-window.viewConfig = {x: 0, y: 2.7 * 100, rotation: 0, zoom: 0.4};
+window.viewConfig = {x: 0, y: 1.7 * 100, rotation: 0, zoom: 0.4};
 
 void async function main() {
     const wasm = await import("./pkg");
@@ -15,7 +15,7 @@ void async function main() {
 
     const canvas = document.createElement('canvas');
     canvas.style.border = "1px solid black";
-    const [width, height] = [800, 600];
+    const [width, height] = [800, 500];
     canvas.width = width;
     canvas.height = height;
 
@@ -24,15 +24,15 @@ void async function main() {
     const integration_parameters = {
         dt: 1.0 / 60.0,
         erp: 0.2,
-        warmstart_coeff: 1.0,
+        warmstart_coeff: 1.00,
         restitution_velocity_threshold: 1.0,
-        allowed_linear_error: 0.001,
-        allowed_angular_error: 0.001,
+        allowed_linear_error: 0.0001,
+        allowed_angular_error: 0.0001,
         max_linear_correction: 100.0,
         max_angular_correction: 0.2,
         max_stabilization_multiplier: 0.2,
         max_velocity_iterations: 20,
-        max_position_iterations: 3,
+        max_position_iterations: 2,
     };
 
     const game = new wasm.Game(canvas, gorilla_img, { width, height, integration_parameters });
@@ -79,86 +79,6 @@ void async function main() {
             {value : 0, pressed : false}]
     };
 
-    document.addEventListener('keydown', (event) => {
-        const keyName = event.key;
-        if (keyName == " "){
-            keyboard.buttons[0].value = 1;
-            keyboard.buttons[0].pressed = true;
-        }
-        /*
-        if (keyName == "Control"){
-            keyboard.buttons[1].value = 1
-            keyboard.buttons[1].pressed = true;
-        }
-        */
-        if (keyName == "w"){
-            keyboard.axes[1] = -1;
-        }
-        if (keyName == "s"){
-            keyboard.axes[1] = 1;
-        }
-        if (keyName == "d"){
-            keyboard.axes[0] = 1;
-        }
-        if (keyName == "a")
-        {
-            keyboard.axes[0] = -1;
-        }
-        if (keyName == "ArrowUp"){
-            keyboard.axes[3] = -1;
-        }
-        if (keyName == "ArrowDown"){
-            keyboard.axes[3] = 1;
-        }
-        if (keyName == "ArrowRight"){
-            keyboard.axes[2] = 1;
-        }
-        if (keyName == "ArrowLeft")
-        {
-            keyboard.axes[2] = -1;
-        }
-    });
-
-    document.addEventListener('keyup', (event) => {
-        const keyName = event.key;
-        if(keyName == " "){
-            keyboard.buttons[0].value = 0;
-            keyboard.buttons[0].pressed = false;
-        }
-        /*
-        if (keyName == "Control"){
-            keyboard.buttons[1].value = 0
-            keyboard.buttons[1].pressed = false;
-        }
-        */
-        if (keyName == "w"){
-            keyboard.axes[1] = 0;
-        }
-        if (keyName == "s"){
-            keyboard.axes[1] = 0;
-        }
-        if (keyName == "d"){
-            keyboard.axes[0] = 0;
-        }
-        if (keyName == "a")
-        {
-            keyboard.axes[0] = 0;
-        }
-        if (keyName == "ArrowUp"){
-            keyboard.axes[3] = 0;
-        }
-        if (keyName == "ArrowDown"){
-            keyboard.axes[3] = 0;
-        }
-        if (keyName == "ArrowRight"){
-            keyboard.axes[2] = 0;
-        }
-        if (keyName == "ArrowLeft")
-        {
-            keyboard.axes[2] = 0;
-        }
-    })
-
     let last_time = +performance.now();
     const loop = (timestamp) => {
         try { scangamepads(); } catch {}
@@ -192,8 +112,8 @@ void async function main() {
 
         const btnX = gamePad.buttons[0].pressed;
         const btnO = gamePad.buttons[1].pressed;
-        const btnSqr = gamePad.buttons[2].pressed;
-        const btnTri = gamePad.buttons[3].pressed;
+        const btnTri = gamePad.buttons[2].pressed;
+        const btnSqr = gamePad.buttons[3].pressed;
 
         
         const x = pos.x + hori1 * 0.2;
@@ -220,8 +140,17 @@ void async function main() {
                 cost: 0.3,
             }
         }
+        if (btnTri) {
+            shot.config = {
+                w: 1.0,
+                h: 0.3,
+                inertia: 3,
+                ttl: 10,
+                cost: 3.0,
+            }
+        }
 
-        if (btnX || btnO) {
+        if (btnX || btnO || btnTri) {
             game.shoot(shot, (Math.random() - 0.5) * 100);
         }
     }

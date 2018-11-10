@@ -37,7 +37,7 @@ macro_rules! error { ($($arg:tt)*) => (error(&format!($($arg)*));) }
 
 #[wasm_bindgen]
 #[derive(Debug, Serialize, Deserialize)]
-pub struct XY {
+pub struct Point {
     x: f64,
     y: f64,
 }
@@ -254,7 +254,6 @@ impl Game {
         ctx.rotate(view_config.rotation.unwrap_or(0.0)).unwrap();
         ctx.scale(view_config.zoom.unwrap_or(1.0), view_config.zoom.unwrap_or(1.0)).unwrap();
 
-        // render_nphysics_world(&self.world, &ctx);
 
         ctx.save();
         ctx.set_line_width(0.02);
@@ -264,6 +263,7 @@ impl Game {
         }
         ctx.restore();
 
+        // render_nphysics_world(&self.world, &ctx);
         self.render_players(&ctx);
 
         for banana in &self.objects.bananas {
@@ -388,7 +388,7 @@ impl Game {
 
     pub fn gorilla_pos(&self, index: usize) -> JsValue {
         let pos = self.pos_of(self.objects.gorillas[index].body);
-        JsValue::from_serde(&XY { x: pos.x, y: pos.y }).unwrap()
+        JsValue::from_serde(&Point { x: pos.x, y: pos.y }).unwrap()
     }
 
     fn _shoot(&mut self, shot: &Shot, r: f64) {
@@ -508,11 +508,12 @@ fn render_nphysics_world(world: &World, ctx: &CanvasRenderingContext2d) {
                 ctx.translate(x , y).unwrap();
                 ctx.rotate(rotation.angle()).unwrap();
                 ctx.rect(-w, -h,  w * 2., h * 2.);
-                // ctx.rect(20.0 + pos.x * 100.0, pos.y * 100.0, 10.0, 10.0);
-                // ctx.fill();
-                ctx.set_line_width(0.01);
+                ctx.rect(20.0 + pos.x * 100.0, pos.y * 100.0, 10.0, 10.0);
+                ctx.fill();
+                ctx.set_line_width(0.001);
                 ctx.stroke();
-
+                ctx.set_fill_style(&JsValue::from(String::from("red")));
+                ctx.fill_rect(-0.025, -0.025, 0.05, 0.05);
                 ctx.restore();
                 // console::log_2(&pos.x.into(), &pos.y.into());
             } else {
