@@ -28,7 +28,7 @@ void async function main() {
         restitution_velocity_threshold: 1.0,
         allowed_linear_error: 0.001,
         allowed_angular_error: 0.001,
-        mex_max_linear_correction: 100.0,
+        max_linear_correction: 100.0,
         max_angular_correction: 0.2,
         max_stabilization_multiplier: 0.2,
         max_velocity_iterations: 20,
