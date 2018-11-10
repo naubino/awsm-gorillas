@@ -248,42 +248,49 @@ impl Game {
 
         let ctx = dom_helpers::canvas_get_ctx_2d(&self.canvas);
         ctx.set_fill_style(&JsValue::from(String::from("#0402ac")));
+        // ctx.set_fill_style(&JsValue::from(String::from("#ffffff")));
         ctx.fill_rect(0.0, 0.0, self.canvas.width().into(), self.canvas.height().into());
+
         ctx.save();
-        ctx.translate(view_config.x.unwrap_or(0.0), view_config.y.unwrap_or(0.0)).unwrap();
-        ctx.rotate(view_config.rotation.unwrap_or(0.0)).unwrap();
+
         ctx.scale(view_config.zoom.unwrap_or(1.0), view_config.zoom.unwrap_or(1.0)).unwrap();
+        ctx.rotate(view_config.rotation.unwrap_or(0.0)).unwrap();
+        ctx.translate(view_config.x.unwrap_or(0.0), view_config.y.unwrap_or(0.0)).unwrap();
 
 
         ctx.save();
         ctx.set_line_width(0.02);
-        ctx.scale(100., 100.).unwrap();
-        for brick in &self.objects.bricks {
-            self.render_brick(&ctx, brick);
-        }
         ctx.restore();
 
-        // render_nphysics_world(&self.world, &ctx);
+        self.render_bricks(&ctx);
+        // self.debug_render(&ctx);
+
         self.render_players(&ctx);
 
-        for banana in &self.objects.bananas {
-            self.render_banana(&ctx, banana);
-        }
+        self.render_bananas(&ctx);
+
 
         ctx.restore();
     }
 
+    fn render_bricks(&self, ctx: &CanvasRenderingContext2d) {
+        for brick in &self.objects.bricks {
+            self.render_brick(&ctx, brick);
+        }
+    }
     fn render_brick(&self, ctx: &CanvasRenderingContext2d, brick: &shapes::Brick) {
         let pos = self.pos_of(brick.body);
         let size = self.size_of(&brick.shape);
         let angle = self.rot_of(brick.body);
 
-        ctx.save();
         ctx.begin_path();
+        ctx.save();
+        ctx.scale(100., 100.).unwrap();
         ctx.translate(pos.x , pos.y).unwrap();
         ctx.rotate(angle).unwrap();
 
         ctx.rect(-size.x * 0.5, - size.y * 0.5, size.x, size.y);
+        ctx.set_line_width(0.02);
         ctx.stroke();
         ctx.set_fill_style(&JsValue::from(&brick.fill_style));
         ctx.fill();
@@ -291,21 +298,71 @@ impl Game {
         ctx.restore();
     }
 
+    fn render_bananas(&self, ctx: &CanvasRenderingContext2d) {
+        for banana in &self.objects.bananas {
+            self.render_banana(&ctx, banana);
+        }
+    }
+
     fn render_banana(&self, ctx: &CanvasRenderingContext2d, banana: &Banana) {
         let pos = self.pos_of(banana.body);
         let size = banana.sprite.size;
         let angle = self.rot_of(banana.body);
+
         ctx.begin_path();
         ctx.save();
         ctx.scale(100., 100.).unwrap();
         ctx.translate(pos.x , pos.y).unwrap();
         ctx.rotate(angle).unwrap();
+
         ctx.rect(-size.x * 0.5, - size.y * 0.5, size.x, size.y);
         ctx.set_line_width(0.02);
         ctx.stroke();
         ctx.set_fill_style(&JsValue::from(String::from("yellow")));
         ctx.fill_rect(-size.x * 0.5, - size.y * 0.5, size.x, size.y);
         ctx.restore();
+    }
+
+    fn debug_render(&self, ctx: &CanvasRenderingContext2d) {
+        self.world.colliders().for_each(|collider| {
+
+            if let Some(body) = self.world.rigid_body(collider.data().body()) {
+
+                let pos = body.position().translation.vector;
+                let x = pos.x;
+                let y = pos.y;
+
+                let rotation = body.position().rotation;
+                let shape = collider.shape();
+
+                if let Some(cube) = shape.as_shape::<Cuboid<_>>() {
+                    // let shape_offset = collider.position().translate.vector;
+                    let size = cube.half_extents();
+                    let (w, h) = (size.x, size.y);
+                    ctx.begin_path();
+                    ctx.save();
+                    ctx.scale(100., 100.).unwrap();
+                    // ctx.translate(x - w + shape_offset.x, y - h + shape_offset.y);
+                    ctx.translate(x , y).unwrap();
+                    ctx.rotate(rotation.angle()).unwrap();
+                    ctx.rect(-w, -h,  w * 2., h * 2.);
+                    ctx.rect(20.0 + pos.x * 100.0, pos.y * 100.0, 10.0, 10.0);
+                    ctx.fill();
+                    ctx.set_line_width(0.01);
+                    ctx.stroke();
+                    ctx.set_fill_style(&JsValue::from(String::from("red")));
+                    ctx.fill_rect(-0.025, -0.025, 0.05, 0.05);
+                    ctx.restore();
+                    // console::log_2(&pos.x.into(), &pos.y.into());
+                } else {
+                    debug!("not painting" );
+                }
+            }
+        });
+    }
+
+    fn debug_render_body(&self, ctx: &CanvasRenderingContext2d) {
+
     }
 
     pub fn render_players(&self, ctx: &CanvasRenderingContext2d) {
@@ -484,42 +541,3 @@ impl Gorilla {
 
 }
 
-
-fn render_nphysics_world(world: &World, ctx: &CanvasRenderingContext2d) {
-    world.colliders().for_each(|collider| {
-
-        if let Some(body) = world.rigid_body(collider.data().body()) {
-
-            let pos = body.position().translation.vector;
-            let x = pos.x;
-            let y = pos.y;
-
-            let rotation = body.position().rotation;
-            let shape = collider.shape();
-
-            if let Some(cube) = shape.as_shape::<Cuboid<_>>() {
-                // let shape_offset = collider.position().translate.vector;
-                let size = cube.half_extents();
-                let (w, h) = (size.x, size.y);
-                ctx.begin_path();
-                ctx.save();
-                ctx.scale(100., 100.).unwrap();
-                // ctx.translate(x - w + shape_offset.x, y - h + shape_offset.y);
-                ctx.translate(x , y).unwrap();
-                ctx.rotate(rotation.angle()).unwrap();
-                ctx.rect(-w, -h,  w * 2., h * 2.);
-                ctx.rect(20.0 + pos.x * 100.0, pos.y * 100.0, 10.0, 10.0);
-                ctx.fill();
-                ctx.set_line_width(0.001);
-                ctx.stroke();
-                ctx.set_fill_style(&JsValue::from(String::from("red")));
-                ctx.fill_rect(-0.025, -0.025, 0.05, 0.05);
-                ctx.restore();
-                // console::log_2(&pos.x.into(), &pos.y.into());
-            } else {
-                debug!("not painting" );
-            }
-        }
-    });
-    // debug!("painted colliders" );
-}
