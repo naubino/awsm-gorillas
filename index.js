@@ -1,6 +1,6 @@
 import { initGamePad, gamepadNormalize, controllers, scangamepads } from './gamepad';
 
-const DEBUG_GAME_PAD = true;
+const DEBUG_GAME_PAD = !true;
 
 window.viewConfig = {x: 0, y: 0, rotation: 0, zoom: 50.0};
 
@@ -18,6 +18,9 @@ void async function main() {
     const [width, height] = [800, 500];
     canvas.width = width;
     canvas.height = height;
+    canvas.style.marginLeft  = "auto"
+    canvas.style.marginRight = "auto"
+    canvas.style.display = "block"
 
     document.body.appendChild(canvas);
 
@@ -117,7 +120,7 @@ void async function main() {
         
         const x = pos.x + hori1 * 0.2;
         const y = pos.y + vert1 * 0.2;
-        const power = Math.max(8, 20 * mag);
+        const power = Math.max(8, 14 * mag);
 
         window.viewConfig.x -= hori2 * 0.5;
         window.viewConfig.y -= vert2 * 0.5;
