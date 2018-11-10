@@ -249,8 +249,8 @@ impl Game {
         let zoom = view_config.zoom.unwrap_or(1.0);
         let width = self.canvas.width() as f64;
         let height = self.canvas.height() as f64;
-        let background = "#0402ac";
-        // let background = "#ffffff";
+        // let background = "#0402ac";
+        let background = "#ffffff";
 
         let ctx = dom_helpers::canvas_get_ctx_2d(&self.canvas);
 
@@ -274,8 +274,8 @@ impl Game {
 
             ctx.fill_rect(-0.25, -0.25, 0.5, 0.5);
 
-            self.render_bricks(&ctx);
             // self.debug_render(&ctx);
+            self.render_bricks(&ctx);
             self.render_players(&ctx);
             self.render_bananas(&ctx);
 

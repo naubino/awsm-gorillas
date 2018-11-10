@@ -2,7 +2,7 @@ import { initGamePad, gamepadNormalize, controllers, scangamepads } from './game
 
 const DEBUG_GAME_PAD = true;
 
-window.viewConfig = {x: 0, y: 0, rotation: 0, zoom: 51.0};
+window.viewConfig = {x: 0, y: 0, rotation: 0, zoom: 50.0};
 
 void async function main() {
     const wasm = await import("./pkg");
@@ -58,11 +58,11 @@ void async function main() {
             {x:  -4.6, w: 3, h: 12, fill_style: style[1] },
             {x:  -3.0, w: 3, h: 15, fill_style: style[2] },
 
-            {x:  -0.5, w: 7, h: 38, fill_style: style[3] },
+            {x:  0.0, w: 7, h: 38, fill_style: style[3] },
 
-            {x:  7.0, w: 5, h: 21, fill_style: style[0] },
+            {x:  3.0, w: 3, h: 15, fill_style: style[4] },
             {x:  4.6, w: 3, h: 12, fill_style: style[1] },
-            {x:  3.0, w: 3, h: 15, fill_style: style[2] },
+            {x:  7.0, w: 5, h: 21, fill_style: style[0] },
 
 
         ],
@@ -119,12 +119,14 @@ void async function main() {
         const y = pos.y + vert1 * 0.2;
         const power = Math.max(8, 20 * mag);
 
-        window.viewConfig.x -= hori2;
-        window.viewConfig.y -= vert2;
+        window.viewConfig.x -= hori2 * 0.5;
+        window.viewConfig.y -= vert2 * 0.5;
         window.viewConfig.zoom += 0.3 * (-l2 + r2);
 
         if (l1) {window.viewConfig.rotation += 0.05}
         if (r1) {window.viewConfig.rotation -= 0.05}
+        // if (l1) {window.viewConfig.x += 0.5}
+        // if (r1) {window.viewConfig.x -= 0.5}
 
 
         let shot = { x, y, rot, power, gorilla_id: player };
