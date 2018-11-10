@@ -1,8 +1,8 @@
 import { initGamePad, gamepadNormalize, controllers, scangamepads } from './gamepad';
 
-const DEBUG_GAME_PAD = !true;
+const DEBUG_GAME_PAD = true;
 
-window.viewConfig = {x: 0, y: 1.7 * 100, rotation: 0, zoom: 0.4};
+window.viewConfig = {x: 0, y: 0, rotation: 0, zoom: 51.0};
 
 void async function main() {
     const wasm = await import("./pkg");
@@ -47,27 +47,28 @@ void async function main() {
         box_radx: 0.21 - margin,
         box_rady: 0.10 - margin,
         ground_radx: 125 - margin,
-        ground_rady: 1 - margin,
+        ground_rady: 4.5 ,
         ground_x: 0,
         ground_y: 9,
         f1: 1,
         f2: 2,
 
         buildings: [
-            {x:  0.5, w: 5, h: 21, fill_style: style[0] },
-            {x:  2.9, w: 3, h: 12, fill_style: style[1] },
-            {x:  4.5, w: 3, h: 15, fill_style: style[2] },
+            {x:  -7.0, w: 5, h: 21, fill_style: style[0] },
+            {x:  -4.6, w: 3, h: 12, fill_style: style[1] },
+            {x:  -3.0, w: 3, h: 15, fill_style: style[2] },
 
-            {x:  8.8, w: 7, h: 38, fill_style: style[3] },
+            {x:  -0.5, w: 7, h: 38, fill_style: style[3] },
 
-            {x: 14.3, w: 3, h: 15, fill_style: style[4] },
-            {x: 15.9, w: 3, h: 12, fill_style: style[1] },
-            {x: 17.5, w: 5, h: 21, fill_style: style[0] },
-            // {x: 8.2, w: 8, h: 69},
+            {x:  7.0, w: 5, h: 21, fill_style: style[0] },
+            {x:  4.6, w: 3, h: 12, fill_style: style[1] },
+            {x:  3.0, w: 3, h: 15, fill_style: style[2] },
+
+
         ],
 
-        player_a: {x: 1.2,  y: 0.9, radx: 0.2, rady: 0.3, inertia: 0.1 },
-        player_b: {x: 17.8, y: 0.4, radx: 0.2, rady: 0.3, inertia: 0.1 },
+        player_a: {x: -7.0, y: -1.0, radx: 0.2, rady: 0.3, inertia: 0.1 },
+        player_b: {x:  7.0, y: -1.0, radx: 0.2, rady: 0.3, inertia: 0.1 },
     });
 
     const keyboard = {
@@ -79,7 +80,7 @@ void async function main() {
             {value : 0, pressed : false}]
     };
 
-    let last_time = +performance.now();
+    let last_time = + performance.now();
     const loop = (timestamp) => {
         try { scangamepads(); } catch {}
 
@@ -102,10 +103,6 @@ void async function main() {
 
         const [ hori1, vert1, l2, hori2, vert2, r2, hori3, vert3 ] = input;
 
-        window.viewConfig.x -= hori2 * 10;
-        window.viewConfig.y -= vert2 * 10;
-        window.viewConfig.zoom += 0.01 * (-l2 + r2);
-
         const pos = game.gorilla_pos(player);
         const mag = Math.sqrt(vert1*vert1 + hori1*hori1);
         const rot = vert1 || hori1 ? Math.atan2(vert1, hori1) : 0;
@@ -114,11 +111,20 @@ void async function main() {
         const btnO = gamePad.buttons[1].pressed;
         const btnTri = gamePad.buttons[2].pressed;
         const btnSqr = gamePad.buttons[3].pressed;
+        const l1 = gamePad.buttons[4].pressed;
+        const r1 = gamePad.buttons[5].pressed;
 
         
         const x = pos.x + hori1 * 0.2;
         const y = pos.y + vert1 * 0.2;
         const power = Math.max(8, 20 * mag);
+
+        window.viewConfig.x -= hori2;
+        window.viewConfig.y -= vert2;
+        window.viewConfig.zoom += 0.3 * (-l2 + r2);
+
+        if (l1) {window.viewConfig.rotation += 0.05}
+        if (r1) {window.viewConfig.rotation -= 0.05}
 
 
         let shot = { x, y, rot, power, gorilla_id: player };

@@ -246,31 +246,41 @@ impl Game {
     pub fn render_scene(&self, raw_view_config: &JsValue) {
         let view_config: ViewConfig = raw_view_config.into_serde().unwrap();
 
+        let zoom = view_config.zoom.unwrap_or(1.0);
+        let width = self.canvas.width() as f64;
+        let height = self.canvas.height() as f64;
+        let background = "#0402ac";
+        // let background = "#ffffff";
+
         let ctx = dom_helpers::canvas_get_ctx_2d(&self.canvas);
-        ctx.set_fill_style(&JsValue::from(String::from("#0402ac")));
-        // ctx.set_fill_style(&JsValue::from(String::from("#ffffff")));
-        ctx.fill_rect(0.0, 0.0, self.canvas.width().into(), self.canvas.height().into());
 
+        // background
         ctx.save();
-
-        ctx.scale(view_config.zoom.unwrap_or(1.0), view_config.zoom.unwrap_or(1.0)).unwrap();
-        ctx.rotate(view_config.rotation.unwrap_or(0.0)).unwrap();
-        ctx.translate(view_config.x.unwrap_or(0.0), view_config.y.unwrap_or(0.0)).unwrap();
-
-
-        ctx.save();
-        ctx.set_line_width(0.02);
+            ctx.set_fill_style(&JsValue::from(background));
+            ctx.fill_rect(0.0, 0.0, self.canvas.width().into(), self.canvas.height().into());
         ctx.restore();
 
-        self.render_bricks(&ctx);
-        // self.debug_render(&ctx);
+        // foreground
+        ctx.save();
+            ctx.translate(0.5 * width, 0.5 * height).unwrap();
 
-        self.render_players(&ctx);
+            ctx.rotate(view_config.rotation.unwrap_or(0.0)).unwrap();
 
-        self.render_bananas(&ctx);
+            ctx.translate( (-0.5 * width ) / zoom, (-0.5 * height) / zoom).unwrap();
 
+            ctx.scale(zoom, zoom).unwrap();
+
+            ctx.translate(view_config.x.unwrap_or(0.0), view_config.y.unwrap_or(0.0)).unwrap();
+
+            ctx.fill_rect(-0.25, -0.25, 0.5, 0.5);
+
+            self.render_bricks(&ctx);
+            // self.debug_render(&ctx);
+            self.render_players(&ctx);
+            self.render_bananas(&ctx);
 
         ctx.restore();
+
     }
 
     fn render_bricks(&self, ctx: &CanvasRenderingContext2d) {
@@ -285,7 +295,6 @@ impl Game {
 
         ctx.begin_path();
         ctx.save();
-        ctx.scale(100., 100.).unwrap();
         ctx.translate(pos.x , pos.y).unwrap();
         ctx.rotate(angle).unwrap();
 
@@ -311,7 +320,6 @@ impl Game {
 
         ctx.begin_path();
         ctx.save();
-        ctx.scale(100., 100.).unwrap();
         ctx.translate(pos.x , pos.y).unwrap();
         ctx.rotate(angle).unwrap();
 
@@ -341,8 +349,7 @@ impl Game {
                     let (w, h) = (size.x, size.y);
                     ctx.begin_path();
                     ctx.save();
-                    ctx.scale(100., 100.).unwrap();
-                    // ctx.translate(x - w + shape_offset.x, y - h + shape_offset.y);
+                    ctx.set_fill_style(&JsValue::from(String::from("#ffffff")));
                     ctx.translate(x , y).unwrap();
                     ctx.rotate(rotation.angle()).unwrap();
                     ctx.rect(-w, -h,  w * 2., h * 2.);
@@ -372,7 +379,6 @@ impl Game {
             let angle = self.rot_of(gorilla.body);
 
             ctx.save();
-            ctx.scale(100., 100.).unwrap();
             ctx.translate(pos.x , pos.y).unwrap();
             ctx.rotate(angle).unwrap();
 
