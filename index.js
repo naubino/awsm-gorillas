@@ -159,25 +159,29 @@ void async function main() {
     let last_time = + performance.now();
 
     const loop = (timestamp) => {
-        try { scangamepads(); } catch {}
+        if (!window.paused) {
+            try { scangamepads(); } catch {}
 
-        if (controllers[0]) controlPlayer(0, controllers[0], (btn) => shoot({game, playerIndex: 0}, btn));
-        if (controllers[1]) controlPlayer(1, controllers[1], (btn) => shoot({game, playerIndex: 1}, btn));
+            if (controllers[0]) controlPlayer(0, controllers[0], (btn) => shoot({game, playerIndex: 0}, btn));
+            if (controllers[1]) controlPlayer(1, controllers[1], (btn) => shoot({game, playerIndex: 1}, btn));
 
-        const dt = +timestamp - last_time;
-        last_time = +timestamp;
+            const dt = +timestamp - last_time;
+            last_time = +timestamp;
 
-        game.step(1 / 60);
-        game.render_scene(viewConfig);
+            game.step(1 / 60);
+            game.render_scene(viewConfig);
+        }
 
         requestAnimationFrame(loop);
     }
 
     handleKeyboard(({
         w,a,s,d,
-        ArrowUp, ArrowLeft, ArrowDown, ArrowRight
+        ArrowUp, ArrowLeft, ArrowDown, ArrowRight,
+        Pause
     }) => {
         switch (true) {
+            case Pause: window.paused = !window.paused ; break;
             case w: game.move_gorilla(0, {x:  0,   y: -0.1}); break;
             case a: game.move_gorilla(0, {x: -0.1, y:  0  }); break;
             case s: game.move_gorilla(0, {x:  0,   y:  0.1}); break;
@@ -248,7 +252,7 @@ function shoot({game, playerIndex}, {btnX, btnO, btnSqr, btnTri, rot, hori1, ver
 function handleKeyboard(keyhandler) {
     const leftKeys = ['w', 'a', 's', 'd', ' '];
     const rightKeys = ['ArrowUp', 'ArrowLeft', 'ArrowDown', 'ArrowRight', '0'];
-    const knownKeys = [...leftKeys, ...rightKeys];
+    const knownKeys = [...leftKeys, ...rightKeys, 'Pause'];
     document.addEventListener('keyup', ({key}) => {
         const gorillaKeys = {};
         knownKeys.forEach(exp => gorillaKeys[exp] = key === exp)

@@ -1,4 +1,5 @@
 #![allow(unused_macros, unused_imports)]
+#![feature(nll)]
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 
@@ -442,6 +443,11 @@ impl Game {
     }
 
     fn gc(&mut self, dt: f64) {
+        self.gc_bananas(dt);
+        self.gc_bricks(dt);
+    }
+
+    fn gc_bananas(&mut self, dt: f64) {
         let mut garbage = Vec::new();
         let new_bananas = self.objects.bananas
             .drain(..)
@@ -458,6 +464,23 @@ impl Game {
         self.world.remove_colliders(&garbage);
     }
 
+    fn gc_bricks(&mut self, dt: f64) {
+        let mut garbage = Vec::new();
+        let new_bricks = self.objects.bricks
+            .drain(..)
+            .map(|mut brick| {
+                brick.ttl = brick.ttl.map(|ttl| ttl - dt);
+                brick
+            })
+            .inspect(|brick| if brick.ttl.is_some() && brick.ttl.unwrap() < 0.0 {
+                garbage.push(brick.collision_object);
+            })
+            .filter(|brick| brick.ttl.is_none() || brick.ttl.unwrap() >= 0.0)
+            .collect();
+        self.objects.bricks = new_bricks;
+        self.world.remove_colliders(&garbage);
+    }
+
     fn collisions(&mut self) {
         for event in self.world.contact_events().iter() {
             // let ProximityEvent{collider1, collider2, new_status, ..} = event;
@@ -467,23 +490,26 @@ impl Game {
                 use self::ObjectKind::*;
                 let kind1 = self.object_kinds.get(&collider1.uid());
                 let kind2 = self.object_kinds.get(&collider2.uid());
+                let brick_ttl = Some(0.1);
 
                 match (kind1, kind2) {
-                   (Some(Banana), Some(Brick)) | (Some(Brick), Some(Banana)) => {
-                       debug!("Banana hit Brick ");
-
-                   },
-                   (Some(Banana), None) | (None, Some(Banana)) => {
-                       debug!("Banana hit something weird ");
-                   },
-                   (Some(Brick), Some(Brick)) => {
-                   },
+                    (Some(Brick), Some(Banana)) =>
+                        if let Some(brick) = self.objects.bricks.iter_mut().find(|b| b.uid == collider1.uid()) {
+                            brick.ttl = brick_ttl;
+                        },
+                    (Some(Banana), Some(Brick)) =>
+                        if let Some(brick) = self.objects.bricks.iter_mut().find(|b| b.uid == collider2.uid()) {
+                            brick.ttl = brick_ttl;
+                        },
+                    // (Some(Banana), None) | (None, Some(Banana)) => {
+                    //     // debug!("Banana hit something weird ");
+                    // },
+                    // (Some(Brick), Some(Brick)) => { },
                     _ => {
-                       debug!("weird collision {:?}", (kind1, kind2) );
+                       //  debug!("weird collision {:?}", (kind1, kind2) );
                     }
                 }
             }
-
         }
     }
 
