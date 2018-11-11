@@ -5,7 +5,7 @@ const DEBUG_GAME_PAD = !true;
 window.viewConfig = {x: 0, y: 0.6, rotation: 0, zoom: 50.0};
 
 const style = [ '#04aaac', '#ac0204', '#acaaac', '#aa04ac', '#aaac04' ]
-const selectedLevel = 2;
+const selectedLevel = 1;
 const levels = [
     {
     buildings: [
@@ -96,8 +96,8 @@ const shotConfigs = {
     heavy: {
         w: 0.6,
         h: 0.2,
-        inertia: 1,
-        ttl: 10,
+        inertia: 2,
+        ttl: 3.5,
         cost: 3.0,
     }
 };
@@ -191,7 +191,7 @@ function controlPlayer(playerIndex, gamePad, shootCallback) {
     const r1 = gamePad.buttons[5].pressed;
 
     
-    window.viewConfig.x -= hori2 * 0.5;
+    // window.viewConfig.x -= hori2 * 0.5;
     window.viewConfig.y -= vert2 * 0.5;
     window.viewConfig.zoom += 0.3 * (-l2 + r2);
 
