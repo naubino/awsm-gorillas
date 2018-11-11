@@ -172,9 +172,25 @@ void async function main() {
 
         requestAnimationFrame(loop);
     }
+
+    handleKeyboard(({
+        w,a,s,d,
+        ArrowUp, ArrowLeft, ArrowDown, ArrowRight
+    }) => {
+        switch (true) {
+            case w: game.move_gorilla(0, {x:  0,   y: -0.1}); break;
+            case a: game.move_gorilla(0, {x: -0.1, y:  0  }); break;
+            case s: game.move_gorilla(0, {x:  0,   y:  0.1}); break;
+            case d: game.move_gorilla(0, {x:  0.1, y:  0  }); break;
+
+            case ArrowUp: game.move_gorilla(1, {x:  0,   y: -0.1}); break;
+            case ArrowLeft: game.move_gorilla(1, {x: -0.1, y:  0  }); break;
+            case ArrowDown: game.move_gorilla(1, {x:  0,   y: -0.1}); break;
+            case ArrowRight: game.move_gorilla(1, {x:  0.1, y:  0  }); break;
+        }
+    });
     loop();
 }()
-
 
 function controlPlayer(playerIndex, gamePad, shootCallback) {
     const input = gamepadNormalize(gamePad);
@@ -205,7 +221,6 @@ function controlPlayer(playerIndex, gamePad, shootCallback) {
 }
 
 function shoot({game, playerIndex}, {btnX, btnO, btnSqr, btnTri, rot, hori1, vert1}) {
-
     const pos = game.gorilla_pos(playerIndex);
     const mag = Math.sqrt(vert1*vert1 + hori1*hori1);
     const power = Math.max(8, 14 * mag);
@@ -228,4 +243,16 @@ function shoot({game, playerIndex}, {btnX, btnO, btnSqr, btnTri, rot, hori1, ver
     if (btnX || btnO || btnTri) {
         game.shoot(shot, (Math.random() - 0.5) * 100);
     }
+}
+
+function handleKeyboard(keyhandler) {
+    const leftKeys = ['w', 'a', 's', 'd', ' '];
+    const rightKeys = ['ArrowUp', 'ArrowLeft', 'ArrowDown', 'ArrowRight', '0'];
+    const knownKeys = [...leftKeys, ...rightKeys];
+    document.addEventListener('keyup', ({key}) => {
+        const gorillaKeys = {};
+        knownKeys.forEach(exp => gorillaKeys[exp] = key === exp)
+        keyhandler(gorillaKeys)
+    });
+
 }

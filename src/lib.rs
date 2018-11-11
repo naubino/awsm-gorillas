@@ -42,6 +42,18 @@ pub struct Point {
     y: f64,
 }
 
+impl Into<Vector2<f64>> for Point {
+    fn into(self) -> Vector2<f64> {
+        Vector2::new(self.x, self.y)
+    }
+}
+
+impl Into<Isometry2> for Point {
+    fn into(self) -> Isometry2 {
+        Isometry2::new(self.into(), 0f64)
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct GameConfig {
     width: Option<f64>,
@@ -50,7 +62,7 @@ pub struct GameConfig {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-/// Parameters for a time-step of the physics engine.
+/// Parameters for u time-step of the physics engine.
 pub struct IntegrationParameters<N: Real> {
     /// The timestep (default: `1.0 / 60.0`)
     pub dt: N,
@@ -452,6 +464,27 @@ impl Game {
     pub fn gorilla_pos(&self, index: usize) -> JsValue {
         let pos = self.pos_of(self.objects.gorillas[index].body);
         JsValue::from_serde(&Point { x: pos.x, y: pos.y }).unwrap()
+    }
+
+    pub fn move_gorilla(&mut self, idx: usize, raw_point: &JsValue) {
+        let point: Point = raw_point.into_serde().unwrap();
+        debug!("moving gorilla {} to {:?}", idx, point);
+        let body = match idx {
+            0 => Some(self.objects.gorillas[0].body),
+            1 => Some(self.objects.gorillas[1].body),
+            _ => None,
+        };
+        if let Some(body) = body {
+            if let Some(gorilla) = self.world.rigid_body_mut(body) {
+                let r#move: Vector2<f64> = point.into();
+                let old_pos = gorilla.position();
+                let new_pos = Isometry2::new(
+                    old_pos.translation.vector + r#move,
+                    0f64
+                );
+                gorilla.set_position(new_pos);
+            }
+        }
     }
 
     fn _shoot(&mut self, shot: &Shot, r: f64) {
