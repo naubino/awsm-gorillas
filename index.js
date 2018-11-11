@@ -4,6 +4,79 @@ const DEBUG_GAME_PAD = !true;
 
 window.viewConfig = {x: 0, y: 0.6, rotation: 0, zoom: 50.0};
 
+const style = [ '#04aaac', '#ac0204', '#acaaac', '#aa04ac', '#aaac04' ]
+
+const levels = [
+    {
+    buildings: [
+        { x: -9.6, w: 5, h: 15, fill_style: style[2] },
+        { x: -7.3, w: 5, h: 30, fill_style: style[1] },
+        { x: -4.6, w: 7, h: 40, fill_style: style[0] },
+
+        { x: 4.6, w: 7, h: 40, fill_style: style[0] },
+        { x: 7.3, w: 5, h: 30, fill_style: style[1] },
+        { x: 9.6, w: 5, h: 15, fill_style: style[4] },
+    ],
+
+    player_a: { x: -7.3, y: -4.0, radx: 0.2, rady: 0.3, inertia: 0.5 },
+    player_b: { x: 7.3, y: -4.0, radx: 0.2, rady: 0.3, inertia: 0.5 },
+},
+    {
+    buildings: [
+        { x: -7.0, w: 7, h: 40, fill_style: style[0] },
+        { x: -4.3, w: 5, h: 25, fill_style: style[1] },
+        { x: -2.0, w: 5, h: 15, fill_style: style[2] },
+
+        { x: 2.0, w: 5, h: 15, fill_style: style[4] },
+        { x: 4.3, w: 5, h: 25, fill_style: style[1] },
+        { x: 7.0, w: 7, h: 40, fill_style: style[0] },
+    ],
+
+    player_a: { x: -7.0, y: -4.0, radx: 0.2, rady: 0.3, inertia: 0.5 },
+    player_b: { x: 7.0, y: -4.0, radx: 0.2, rady: 0.3, inertia: 0.5 },
+},
+{
+    buildings: [
+        { x: -7.0, w: 5, h: 21, fill_style: style[0] },
+        { x: -4.6, w: 3, h: 12, fill_style: style[1] },
+        { x: -3.0, w: 3, h: 15, fill_style: style[2] },
+
+        { x: 0.0, w: 7, h: 38, fill_style: style[3] },
+
+        { x: 3.0, w: 3, h: 15, fill_style: style[4] },
+        { x: 4.6, w: 3, h: 12, fill_style: style[1] },
+        { x: 7.0, w: 5, h: 21, fill_style: style[0] },
+    ],
+    player_a: { x: -7.0, y: -1.0, radx: 0.2, rady: 0.3, inertia: 0.1 },
+    player_b: { x: 7.0, y: -1.0, radx: 0.2, rady: 0.3, inertia: 0.1 },
+}];
+
+const selectedLevel = levels[2];
+
+const shotConfigs = {
+    light: {
+        w: 0.2,
+        h: 0.08,
+        inertia: 0.8,
+        ttl: 20,
+        cost: 0.1,
+    },
+    medium: {
+        w: 0.3,
+        h: 0.1,
+        inertia: 1,
+        ttl: 20,
+        cost: 0.3,
+    },
+    heavy: {
+        w: 0.6,
+        h: 0.2,
+        inertia: 1,
+        ttl: 10,
+        cost: 3.0,
+    }
+};
+
 void async function main() {
     const wasm = await import("./pkg");
 
@@ -41,7 +114,6 @@ void async function main() {
     const game = new wasm.Game(canvas, gorilla_img, { width, height, integration_parameters });
     window.game = game;
 
-    const style = [ '#04aaac', '#ac0204', '#acaaac', '#aa04ac', '#aaac04' ]
 
     const margin = 0.00000000001;
     game.set_scene({
@@ -56,20 +128,7 @@ void async function main() {
         f1: 1,
         f2: 2,
 
-        buildings: [
-            {x:  -7.0, w: 5, h: 21, fill_style: style[0] },
-            {x:  -4.6, w: 3, h: 12, fill_style: style[1] },
-            {x:  -3.0, w: 3, h: 15, fill_style: style[2] },
-
-            {x:  0.0, w: 7, h: 38, fill_style: style[3] },
-
-            {x:  3.0, w: 3, h: 15, fill_style: style[4] },
-            {x:  4.6, w: 3, h: 12, fill_style: style[1] },
-            {x:  7.0, w: 5, h: 21, fill_style: style[0] },
-        ],
-
-        player_a: {x: -7.0, y: -1.0, radx: 0.2, rady: 0.3, inertia: 0.1 },
-        player_b: {x:  7.0, y: -1.0, radx: 0.2, rady: 0.3, inertia: 0.1 },
+        ... selectedLevel
     });
 
     let last_time = + performance.now();
@@ -128,33 +187,17 @@ function shoot({game, playerIndex}, {btnX, btnO, btnSqr, btnTri, rot, hori1, ver
     const x = pos.x + hori1 * 0.2;
     const y = pos.y + vert1 * 0.2;
 
+    const {light, medium, heavy} = shotConfigs;
+
     let shot = { x, y, rot, power, gorilla_id: playerIndex };
     if (btnX) {
-        shot.config = {
-            w: 0.2,
-            h: 0.08,
-            inertia: 0.1,
-            ttl: 20,
-            cost: 0.03,
-        };
+        shot.config = light;
     }
     if (btnO) {
-        shot.config = {
-            w: 0.3,
-            h: 0.1,
-            inertia: 1,
-            ttl: 20,
-            cost: 0.3,
-        }
+        shot.config = medium
     }
     if (btnTri) {
-        shot.config = {
-            w: 1.0,
-            h: 0.3,
-            inertia: 3,
-            ttl: 10,
-            cost: 3.0,
-        }
+        shot.config = heavy
     }
 
     if (btnX || btnO || btnTri) {
