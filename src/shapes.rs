@@ -102,6 +102,7 @@ impl Brick {
         let pos = Isometry2::new(vector, 0.0);
         Brick::new(world, pos, radx, rady, margin, fill_style)
     }
+
 }
 
 pub fn make_ground(world: &mut World, cfg: &SceneConfig) -> CollisionObjectHandle {
@@ -159,7 +160,7 @@ pub fn make_building(world: &mut World, center: f64, cols: usize, rows: usize, f
 
                 , row_y
             );
-            let right_corner_pos = Vector2::new( 
+            let right_corner_pos = Vector2::new(
                 center + half_width - w * 0.5
 
                 , row_y

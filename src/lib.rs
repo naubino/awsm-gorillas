@@ -1,5 +1,4 @@
 #![allow(unused_macros, unused_imports)]
-#![feature(nll)]
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 
@@ -22,7 +21,7 @@ use std::collections::HashMap;
 mod dom_helpers;
 mod shapes;
 
-use self::shapes::{Banana, Gorilla};
+use self::shapes::{Banana, Brick, Gorilla};
 
 type World = nphysics2d::world::World<f64>;
 type Isometry2 = nalgebra::Isometry2<f64>;
@@ -174,8 +173,23 @@ pub struct SceneConfig {
 #[derive(Default)]
 struct GameEntities {
     gorillas: Vec<Gorilla>,
-    bricks: Vec<shapes::Brick>,
+    bricks: Vec<Brick>,
     bananas: Vec<Banana>,
+}
+
+impl GameEntities {
+    pub fn get_banana(&self, uid: usize) -> Option<&Banana> {
+        self.bananas.iter().find(|banana| banana.uid == uid)
+    }
+    pub fn get_brick(&self, uid: usize) -> Option<&Brick> {
+        self.bricks.iter().find(|bricks| bricks.uid == uid)
+    }
+    pub fn get_banana_mut(&mut self, uid: usize) -> Option<&mut Banana> {
+        self.bananas.iter_mut().find(|banana| banana.uid == uid)
+    }
+    pub fn get_brick_mut(&mut self, uid: usize) -> Option<&mut Brick> {
+        self.bricks.iter_mut().find(|bricks| bricks.uid == uid)
+    }
 }
 
 #[derive(Debug)]
@@ -192,7 +206,6 @@ pub struct Game {
     objects: GameEntities,
     object_kinds: HashMap<usize, ObjectKind>,
     world: World,
-    id_base: usize,
     gorilla_png: HtmlImageElement,
 }
 
@@ -215,7 +228,6 @@ impl Game {
             objects: GameEntities::default(),
             object_kinds: Default::default(),
             world,
-            id_base: 0,
             gorilla_png
         }
     }
@@ -435,11 +447,6 @@ impl Game {
     pub fn shoot(&mut self, raw_shot: &JsValue, r: f64) {
         let shot: Shot = raw_shot.into_serde().unwrap();
         self._shoot(&shot, r);
-    }
-
-    fn new_id(&mut self) -> usize {
-        self.id_base += 1;
-        self.id_base
     }
 
     fn gc(&mut self, dt: f64) {
