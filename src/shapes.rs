@@ -19,7 +19,59 @@ type World = nphysics2d::world::World<f64>;
 type Isometry2 = nalgebra::Isometry2<f64>;
 type ShapeHandle = ncollide2d::shape::ShapeHandle<f64>;
 
+use crate::BananaConfig;
+use crate::PlayerConfig;
+
 macro_rules! debug { ($($arg:tt)*) => (debug(&format!($($arg)*));) }
+
+pub struct Sprite {
+    pub size: Vector2<f64>,
+}
+
+pub struct Banana {
+    pub shape: ShapeHandle,
+    pub body: BodyHandle,
+    pub collision_object: CollisionObjectHandle,
+    pub sprite: Sprite,
+    pub uid: usize,
+    pub ttl: f64,
+}
+
+impl Banana {
+    pub fn new(world: &mut World, config: &BananaConfig) -> Self {
+        let pos = Isometry2::new(zero(), 0.0);
+        let shape = ShapeHandle::new(Cuboid::new(Vector2::new(config.w * 0.5, config.h * 0.5)));
+        let body = world.add_rigid_body(pos, shape.inertia(config.inertia), shape.center_of_mass());
+        let collision_object = world.add_collider(0.0, shape.clone(), body, Isometry2::identity(), Material::default());
+
+        let sprite_size = Vector2::new(config.w, config.h);
+        let sprite = Sprite { size: sprite_size };
+        let uid = collision_object.uid();
+
+        Banana { shape, body, collision_object, sprite, uid, ttl: config.ttl }
+    }
+}
+
+pub struct Gorilla {
+    pub shape: ShapeHandle,
+    pub body: BodyHandle,
+    pub collision_object: CollisionObjectHandle,
+    pub time_to_next_shot: f64,
+}
+
+impl Gorilla {
+    pub fn new(world: &mut World, config: &PlayerConfig) -> Self {
+        let pos = Isometry2::new(Vector2::new(config.x, config.y), 0.0);
+        let shape = ShapeHandle::new(Cuboid::new(Vector2::new(config.radx, config.rady)));
+        let body = world.add_rigid_body(pos, shape.inertia(config.inertia), shape.center_of_mass());
+        let collision_object = world.add_collider(0.0, shape.clone(), body, Isometry2::identity(), Material::default());
+        let time_to_next_shot = 0.;
+
+        Gorilla { shape, body, collision_object, time_to_next_shot }
+    }
+
+
+}
 
 pub struct Brick {
     pub shape: ShapeHandle,

@@ -11,6 +11,8 @@ use nalgebra::{Vector2, zero, Real};
 use ncollide2d::shape::{Cuboid};
 use ncollide2d::world::CollisionObjectHandle;
 use ncollide2d::events::ContactEvent;
+use ncollide2d::events::ProximityEvent;
+use ncollide2d::query::Proximity;
 use nphysics2d::object::{BodyHandle, Material};
 use nphysics2d::volumetric::Volumetric;
 
@@ -18,6 +20,8 @@ use std::collections::HashMap;
 
 mod dom_helpers;
 mod shapes;
+
+use self::shapes::{Banana, Gorilla};
 
 type World = nphysics2d::world::World<f64>;
 type Isometry2 = nalgebra::Isometry2<f64>;
@@ -173,10 +177,19 @@ struct GameEntities {
     bananas: Vec<Banana>,
 }
 
+#[derive(Debug)]
+enum ObjectKind {
+    Ground,
+    Banana,
+    Brick,
+    Gorilla,
+}
+
 #[wasm_bindgen]
 pub struct Game {
     canvas: HtmlCanvasElement,
     objects: GameEntities,
+    object_kinds: HashMap<usize, ObjectKind>,
     world: World,
     id_base: usize,
     gorilla_png: HtmlImageElement,
@@ -199,6 +212,7 @@ impl Game {
         Game {
             canvas: canvas,
             objects: GameEntities::default(),
+            object_kinds: Default::default(),
             world,
             id_base: 0,
             gorilla_png
@@ -245,7 +259,11 @@ impl Game {
 
         for building in &scene_config.buildings {
             // let &BuildingConfig {x, w, h, fill_style } = building;
-            self.objects.bricks.append(&mut shapes::make_building(world, building.x, building.w, building.h, &building.fill_style, &scene_config));
+            let mut bricks = shapes::make_building(world, building.x, building.w, building.h, &building.fill_style, &scene_config);
+            for brick in &bricks {
+                self.object_kinds.insert(brick.uid, ObjectKind::Brick);
+            }
+            self.objects.bricks.append(&mut bricks);
         }
 
         let gorilla_a = Gorilla::new(world, &scene_config.player_a);
@@ -284,7 +302,7 @@ impl Game {
 
             ctx.translate(view_config.x.unwrap_or(0.0), view_config.y.unwrap_or(0.0)).unwrap();
 
-            ctx.fill_rect(-0.25, -0.25, 0.5, 0.5);
+            ctx.fill_rect(-0.25, -7.25, 0.5, 0.5);
 
             // self.debug_render(&ctx);
             self.render_bricks(&ctx);
@@ -300,6 +318,7 @@ impl Game {
             self.render_brick(&ctx, brick);
         }
     }
+
     fn render_brick(&self, ctx: &CanvasRenderingContext2d, brick: &shapes::Brick) {
         let pos = self.pos_of(brick.body);
         let size = self.size_of(&brick.shape);
@@ -380,10 +399,6 @@ impl Game {
         });
     }
 
-    fn debug_render_body(&self, ctx: &CanvasRenderingContext2d) {
-
-    }
-
     pub fn render_players(&self, ctx: &CanvasRenderingContext2d) {
         for gorilla in &self.objects.gorillas {
             let pos = self.pos_of(gorilla.body);
@@ -445,17 +460,28 @@ impl Game {
 
     fn collisions(&mut self) {
         for event in self.world.contact_events().iter() {
+            // let ProximityEvent{collider1, collider2, new_status, ..} = event;
+            // debug!(" contact {:?} ", event);
+            //if new_status == &Proximity::Intersecting {
             if let ContactEvent::Started(collider1, collider2) = event {
-                self.objects.bananas
-                    .iter()
-                    .filter(|b| (b.uid == collider1.uid() || b.uid == collider2.uid()))
-                    .for_each(|banana| {
-                        self.objects.bricks.iter()
-                        .filter(|b| (b.uid == collider1.uid() || b.uid == collider2.uid()))
-                        .for_each(|brick| {
-                            debug!("banana hits brick")
-                        });
-                    });
+                use self::ObjectKind::*;
+                let kind1 = self.object_kinds.get(&collider1.uid());
+                let kind2 = self.object_kinds.get(&collider2.uid());
+
+                match (kind1, kind2) {
+                   (Some(Banana), Some(Brick)) | (Some(Brick), Some(Banana)) => {
+                       debug!("Banana hit Brick ");
+
+                   },
+                   (Some(Banana), None) | (None, Some(Banana)) => {
+                       debug!("Banana hit something weird ");
+                   },
+                   (Some(Brick), Some(Brick)) => {
+                   },
+                    _ => {
+                       debug!("weird collision {:?}", (kind1, kind2) );
+                    }
+                }
             }
 
         }
@@ -497,15 +523,14 @@ impl Game {
             }
         }
 
-        let banana_id = self.new_id();
-
-        let banana = Banana::new(&mut self.world, &shot.config, banana_id);
+        let banana = Banana::new(&mut self.world, &shot.config);
         let pos = Isometry2::new(Vector2::new(shot.x, shot.y), shot.rot);
         let vel = Vector2::new(f64::cos(shot.rot), f64::sin(shot.rot)) * shot.power;
         if let Some(rb) = self.world.rigid_body_mut(banana.body) {
             rb.set_position(pos);
             rb.set_linear_velocity(vel);
             rb.set_angular_velocity(r);
+            self.object_kinds.insert(banana.uid, ObjectKind::Banana);
             self.objects.bananas.push(banana);
         }
     }
@@ -522,10 +547,6 @@ pub struct Shot {
     config: BananaConfig,
 }
 
-pub struct Sprite {
-    pub size: Vector2<f64>,
-}
-
 #[wasm_bindgen]
 #[derive(Default, Serialize, Deserialize, Debug)]
 pub struct BananaConfig {
@@ -535,48 +556,3 @@ pub struct BananaConfig {
     ttl: f64,
     cost: f64,
 }
-
-pub struct Banana {
-    pub shape: ShapeHandle,
-    pub body: BodyHandle,
-    pub collision_object: CollisionObjectHandle,
-    pub sprite: Sprite,
-    uid: usize,
-    ttl: f64,
-}
-
-impl Banana {
-    pub fn new(world: &mut World, config: &BananaConfig, uid: usize) -> Self {
-        let pos = Isometry2::new(zero(), 0.0);
-        let shape = ShapeHandle::new(Cuboid::new(Vector2::new(config.w * 0.5, config.h * 0.5)));
-        let body = world.add_rigid_body(pos, shape.inertia(config.inertia), shape.center_of_mass());
-        let collision_object = world.add_collider(0.0, shape.clone(), body, Isometry2::identity(), Material::default());
-
-        let sprite_size = Vector2::new(config.w, config.h);
-        let sprite = Sprite { size: sprite_size };
-
-        Banana { shape, body, collision_object, sprite, uid, ttl: config.ttl }
-    }
-}
-
-struct Gorilla {
-    pub shape: ShapeHandle,
-    pub body: BodyHandle,
-    pub collision_object: CollisionObjectHandle,
-    pub time_to_next_shot: f64,
-}
-
-impl Gorilla {
-    pub fn new(world: &mut World, config: &PlayerConfig) -> Self {
-        let pos = Isometry2::new(Vector2::new(config.x, config.y), 0.0);
-        let shape = ShapeHandle::new(Cuboid::new(Vector2::new(config.radx, config.rady)));
-        let body = world.add_rigid_body(pos, shape.inertia(config.inertia), shape.center_of_mass());
-        let collision_object = world.add_collider(0.0, shape.clone(), body, Isometry2::identity(), Material::default());
-        let time_to_next_shot = 0.;
-
-        Gorilla { shape, body, collision_object, time_to_next_shot }
-    }
-
-
-}
-
