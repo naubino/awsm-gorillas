@@ -49,7 +49,33 @@ const levels = [
     ],
     player_a: { x: -7.0, y: -1.0, radx: 0.2, rady: 0.3, inertia: 0.1 },
     player_b: { x: 7.0, y: -1.0, radx: 0.2, rady: 0.3, inertia: 0.1 },
-}];
+},
+(() => {
+
+    const leftBuildings = [
+        { x: -1.6, w: 5, h: 45, fill_style: style[2] },
+        { x: -9.6, w: 5, h: 15, fill_style: style[2] },
+        { x: -7.3, w: 5, h: 30, fill_style: style[1] },
+        { x: -4.6, w: 7, h: 40, fill_style: style[4] },
+    ];
+
+    const rightBuildings = leftBuildings.map(building => ({
+        ...building,
+        x: -building.x,
+    }));
+
+
+    return {
+        buildings: [
+            ...leftBuildings,
+            ... rightBuildings
+        ],
+
+        player_a: { x: -7.3, y: -4.0, radx: 0.2, rady: 0.3, inertia: 0.5 },
+        player_b: { x: 7.3, y: -4.0, radx: 0.2, rady: 0.3, inertia: 0.5 },
+    };
+})()
+];
 
 
 const shotConfigs = {
