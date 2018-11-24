@@ -500,14 +500,22 @@ impl Game {
                 let brick_ttl = Some(0.1);
 
                 match (kind1, kind2) {
-                    (Some(Brick), Some(Banana)) =>
+                    (Some(Brick), Some(Banana)) => {
                         if let Some(brick) = self.objects.bricks.iter_mut().find(|b| b.uid == collider1.uid()) {
                             brick.ttl = brick_ttl;
-                        },
-                    (Some(Banana), Some(Brick)) =>
+                        }
+                        if let Some(banana) = self.objects.bananas.iter_mut().find(|b| b.uid == collider2.uid()) {
+                            banana.ttl = 0.1;
+                        }
+                    },
+                    (Some(Banana), Some(Brick)) => {
+                        if let Some(banana) = self.objects.bananas.iter_mut().find(|b| b.uid == collider1.uid()) {
+                            banana.ttl = 0.1;
+                        }
                         if let Some(brick) = self.objects.bricks.iter_mut().find(|b| b.uid == collider2.uid()) {
                             brick.ttl = brick_ttl;
-                        },
+                        }
+                    },
                     // (Some(Banana), None) | (None, Some(Banana)) => {
                     //     // debug!("Banana hit something weird ");
                     // },
