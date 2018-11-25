@@ -19,7 +19,6 @@ type World = nphysics2d::world::World<f64>;
 type Isometry2 = nalgebra::Isometry2<f64>;
 type ShapeHandle = ncollide2d::shape::ShapeHandle<f64>;
 
-use crate::BananaConfig;
 use crate::PlayerConfig;
 
 macro_rules! debug { ($($arg:tt)*) => (debug(&format!($($arg)*));) }
@@ -28,6 +27,17 @@ pub struct Sprite {
     pub size: Vector2<f64>,
 }
 
+#[wasm_bindgen]
+#[derive(Default, Serialize, Deserialize, Debug)]
+pub struct BananaConfig {
+    pub w: f64,
+    pub h: f64,
+    pub inertia: f64,
+    pub explosive: bool,
+    pub ttl: f64,
+    pub stamina: Option<f64>,
+    pub cost: f64,
+}
 pub struct Banana {
     pub shape: ShapeHandle,
     pub body: BodyHandle,
@@ -35,6 +45,7 @@ pub struct Banana {
     pub sprite: Sprite,
     pub uid: usize,
     pub ttl: f64,
+    pub stamina: f64,
     pub explosive: bool,
 }
 
@@ -49,9 +60,10 @@ impl Banana {
         let sprite = Sprite { size: sprite_size };
         let uid = collision_object.uid();
         let ttl = config.ttl;
+        let stamina = config.stamina.unwrap_or(0.05);
         let explosive = config.explosive;
 
-        Banana { shape, body, collision_object, sprite, uid, ttl, explosive }
+        Banana { shape, body, collision_object, sprite, uid, ttl, explosive, stamina }
     }
 }
 

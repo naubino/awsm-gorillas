@@ -21,7 +21,7 @@ use std::collections::HashMap;
 mod dom_helpers;
 mod shapes;
 
-use self::shapes::{Banana, Brick, Gorilla};
+use self::shapes::{Banana, BananaConfig, Brick, Gorilla};
 
 type World = nphysics2d::world::World<f64>;
 type Isometry2 = nalgebra::Isometry2<f64>;
@@ -503,7 +503,7 @@ impl Game {
                 match (kind1, kind2) { // TODO: this doesn't work if you pull it out into a function
                     (Some(Brick), Some(Banana)) => {
                         if let Some(banana) = self.objects.bananas.iter_mut().find(|b| b.uid == collider2.uid()) {
-                            banana.ttl = 0.01;
+                            banana.ttl = f64::min(banana.stamina, banana.ttl);
                             if banana.explosive {
                                 if let Some(brick) = self.objects.bricks.iter_mut().find(|b| b.uid == collider1.uid()) {
                                     brick.ttl = brick_ttl;
@@ -513,7 +513,7 @@ impl Game {
                     },
                     (Some(Banana), Some(Brick)) => {
                         if let Some(banana) = self.objects.bananas.iter_mut().find(|b| b.uid == collider1.uid()) {
-                            banana.ttl = 0.1;
+                            banana.ttl = f64::min(banana.stamina, banana.ttl);
                             if banana.explosive {
                                 if let Some(brick) = self.objects.bricks.iter_mut().find(|b| b.uid == collider2.uid()) {
                                     brick.ttl = brick_ttl;
@@ -591,15 +591,4 @@ pub struct Shot {
     power: f64,
     gorilla_id: usize,
     config: BananaConfig,
-}
-
-#[wasm_bindgen]
-#[derive(Default, Serialize, Deserialize, Debug)]
-pub struct BananaConfig {
-    pub w: f64,
-    pub h: f64,
-    pub inertia: f64,
-    pub explosive: bool,
-    ttl: f64,
-    cost: f64,
 }
