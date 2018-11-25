@@ -315,7 +315,8 @@ impl Game {
 
             ctx.translate(view_config.x.unwrap_or(0.0), view_config.y.unwrap_or(0.0)).unwrap();
 
-            ctx.fill_rect(-0.25, -7.25, 0.5, 0.5);
+            ctx.set_fill_style(&JsValue::from("#FFFF00"));
+            ctx.fill_rect(-0.25, -4.25, 0.5, 0.5);
 
             // self.debug_render(&ctx);
             self.render_bricks(&ctx);
@@ -497,23 +498,27 @@ impl Game {
                 use self::ObjectKind::*;
                 let kind1 = self.object_kinds.get(&collider1.uid());
                 let kind2 = self.object_kinds.get(&collider2.uid());
-                let brick_ttl = Some(0.1);
+                let brick_ttl = Some(0.01);
 
-                match (kind1, kind2) {
+                match (kind1, kind2) { // TODO: this doesn't work if you pull it out into a function
                     (Some(Brick), Some(Banana)) => {
-                        if let Some(brick) = self.objects.bricks.iter_mut().find(|b| b.uid == collider1.uid()) {
-                            brick.ttl = brick_ttl;
-                        }
                         if let Some(banana) = self.objects.bananas.iter_mut().find(|b| b.uid == collider2.uid()) {
-                            banana.ttl = 0.1;
+                            banana.ttl = 0.01;
+                            if banana.explosive {
+                                if let Some(brick) = self.objects.bricks.iter_mut().find(|b| b.uid == collider1.uid()) {
+                                    brick.ttl = brick_ttl;
+                                }
+                            }
                         }
                     },
                     (Some(Banana), Some(Brick)) => {
                         if let Some(banana) = self.objects.bananas.iter_mut().find(|b| b.uid == collider1.uid()) {
                             banana.ttl = 0.1;
-                        }
-                        if let Some(brick) = self.objects.bricks.iter_mut().find(|b| b.uid == collider2.uid()) {
-                            brick.ttl = brick_ttl;
+                            if banana.explosive {
+                                if let Some(brick) = self.objects.bricks.iter_mut().find(|b| b.uid == collider2.uid()) {
+                                    brick.ttl = brick_ttl;
+                                }
+                            }
                         }
                     },
                     // (Some(Banana), None) | (None, Some(Banana)) => {
@@ -594,6 +599,7 @@ pub struct BananaConfig {
     pub w: f64,
     pub h: f64,
     pub inertia: f64,
+    pub explosive: bool,
     ttl: f64,
     cost: f64,
 }

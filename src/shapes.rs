@@ -35,6 +35,7 @@ pub struct Banana {
     pub sprite: Sprite,
     pub uid: usize,
     pub ttl: f64,
+    pub explosive: bool,
 }
 
 impl Banana {
@@ -47,8 +48,10 @@ impl Banana {
         let sprite_size = Vector2::new(config.w, config.h);
         let sprite = Sprite { size: sprite_size };
         let uid = collision_object.uid();
+        let ttl = config.ttl;
+        let explosive = config.explosive;
 
-        Banana { shape, body, collision_object, sprite, uid, ttl: config.ttl }
+        Banana { shape, body, collision_object, sprite, uid, ttl, explosive }
     }
 }
 

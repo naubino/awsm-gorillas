@@ -85,6 +85,7 @@ const shotConfigs = {
         inertia: 0.8,
         ttl: 10,
         cost: 0.1,
+        explosive: false,
     },
     medium: {
         w: 0.3,
@@ -92,6 +93,7 @@ const shotConfigs = {
         inertia: 1,
         ttl: 10,
         cost: 0.3,
+        explosive: true,
     },
     heavy: {
         w: 0.6,
@@ -99,6 +101,7 @@ const shotConfigs = {
         inertia: 2,
         ttl: 3.5,
         cost: 3.0,
+        explosive: false,
     }
 };
 
@@ -210,7 +213,7 @@ function controlPlayer(playerIndex, gamePad, shootCallback) {
     const l1 = gamePad.buttons[4].pressed;
     const r1 = gamePad.buttons[5].pressed;
 
-    
+
     // window.viewConfig.x -= hori2 * 0.5;
     window.viewConfig.y -= vert2 * 0.5;
     window.viewConfig.zoom += 0.3 * (-l2 + r2);
