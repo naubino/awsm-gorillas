@@ -2,10 +2,11 @@ import { initGamePad, gamepadNormalize, controllers, scangamepads } from './game
 
 const DEBUG_GAME_PAD = !true;
 
-window.viewConfig = {x: 0, y: 0.6, rotation: 0, zoom: 50.0};
+window.viewConfig = {x: 0, y: 0.6, rotation: 0, zoom: 30.0};
 
 const style = [ '#04aaac', '#ac0204', '#acaaac', '#aa04ac', '#aaac04' ]
 const selectedLevel = 1;
+const inertia = 0.1;
 const levels = [
     {
     buildings: [
@@ -18,8 +19,8 @@ const levels = [
         { x: 9.6, w: 5, h: 15, fill_style: style[2] },
     ],
 
-    player_a: { x: -7.3, y: -4.0, radx: 0.2, rady: 0.3, inertia: 0.5 },
-    player_b: { x: 7.3, y: -4.0, radx: 0.2, rady: 0.3, inertia: 0.5 },
+    player_a: { x: -7.3, y: -4.0, radx: 0.2, rady: 0.3, inertia },
+    player_b: { x: 7.3, y: -4.0, radx: 0.2, rady: 0.3, inertia },
 },
     {
     buildings: [
@@ -32,8 +33,8 @@ const levels = [
         { x: 7.0, w: 7, h: 40, fill_style: style[3] },
     ],
 
-    player_a: { x: -7.0, y: -4.0, radx: 0.2, rady: 0.3, inertia: 0.5 },
-    player_b: { x: 7.0, y: -4.0, radx: 0.2, rady: 0.3, inertia: 0.5 },
+    player_a: { x: -7.0, y: -4.0, radx: 0.2, rady: 0.3, inertia },
+    player_b: { x: 7.0, y: -4.0, radx: 0.2, rady: 0.3, inertia },
 },
 {
     buildings: [
@@ -47,8 +48,8 @@ const levels = [
         { x: 4.6, w: 3, h: 12, fill_style: style[1] },
         { x: 7.0, w: 5, h: 21, fill_style: style[0] },
     ],
-    player_a: { x: -7.0, y: -1.0, radx: 0.2, rady: 0.3, inertia: 0.1 },
-    player_b: { x: 7.0, y: -1.0, radx: 0.2, rady: 0.3, inertia: 0.1 },
+    player_a: { x: -7.0, y: -1.0, radx: 0.2, rady: 0.3, inertia },
+    player_b: { x: 7.0, y: -1.0, radx: 0.2, rady: 0.3, inertia },
 },
 (() => {
 
@@ -83,8 +84,9 @@ const shotConfigs = {
         w: 0.2,
         h: 0.08,
         inertia: 0.8,
-        ttl: 10,
-        cost: 0.1,
+        stamina: 15,
+        ttl: 40,
+        cost: 0.01,
         explosive: false,
     },
     medium: {
@@ -98,11 +100,21 @@ const shotConfigs = {
     heavy: {
         w: 0.6,
         h: 0.2,
-        inertia: 2,
+        inertia: 20,
+        stamina: 0.1,
         ttl: 3.5,
-        cost: 3.0,
+        cost: 0.3,
         explosive: false,
-    }
+    },
+    special: {
+        w: 0.3,
+        h: 0.3,
+        inertia: 800,
+        stamina: 0.0001,
+        ttl: 0.2,
+        cost: 0.000001,
+        explosive: !false,
+    },
 };
 
 void async function main() {
@@ -234,7 +246,7 @@ function shoot({game, playerIndex}, {btnX, btnO, btnSqr, btnTri, rot, hori1, ver
     const x = pos.x + hori1 * 0.2;
     const y = pos.y + vert1 * 0.2;
 
-    const {light, medium, heavy} = shotConfigs;
+    const {light, medium, heavy, special} = shotConfigs;
 
     let shot = { x, y, rot, power, gorilla_id: playerIndex };
     if (btnX) {
@@ -246,8 +258,11 @@ function shoot({game, playerIndex}, {btnX, btnO, btnSqr, btnTri, rot, hori1, ver
     if (btnTri) {
         shot.config = heavy
     }
+    if (btnSqr) {
+        shot.config = special
+    }
 
-    if (btnX || btnO || btnTri) {
+    if (btnX || btnO || btnTri || btnSqr) {
         game.shoot(shot, (Math.random() - 0.5) * 100);
     }
 }

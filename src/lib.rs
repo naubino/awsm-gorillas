@@ -58,6 +58,7 @@ impl Into<Isometry2> for Point {
     }
 }
 
+#[wasm_bindgen]
 #[derive(Debug, Serialize, Deserialize)]
 pub struct GameConfig {
     width: Option<f64>,
